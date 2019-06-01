@@ -1,5 +1,5 @@
 {
-  "name": "@tavernjs/tavern",
+  "name": "tavern",
   "version": "0.0.1",
   "description": "WIP Super simple framework for service-based architecture in monolithic servers",
   "main": "tavern/index.js",

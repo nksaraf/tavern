@@ -1,5 +1,4 @@
-import Barkeep from './src';
-import { RequestHandler, ExpressAdapter, Logger, Parser } from './src/services';
+import Barkeep, { RequestHandler, ExpressAdapter, Logger, Parser } from './src';
 
 const barkeep = Barkeep();
 barkeep.register([Logger, RequestHandler, ExpressAdapter, Parser]);
