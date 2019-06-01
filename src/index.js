@@ -163,7 +163,6 @@ export class Barkeep {
    * @return {[type]}         [description]
    */
   ask = async (message, payload, ctx) => {
-    console.log(message);
     message = makeMessage(message, payload, ctx);
     if (message === undefined || message === null || message.type === undefined) {
       return;
@@ -206,7 +205,6 @@ export class Barkeep {
   }
 
   tell = async (message, payload, ctx) => {
-    console.log(message);
     message = makeMessage(message, payload, ctx);
     if (message === undefined || message === null || message.type === undefined) {
       return;
