@@ -1,11 +1,11 @@
-import Barkeep, { RequestHandler, ExpressAdapter, Logger, Parser } from './src';
+import tavern, { RequestHandler, ExpressAdapter, Logger, Parser } from './src';
 
-const barkeep = Barkeep();
+const barkeep = tavern();
 barkeep.register([Logger, RequestHandler, ExpressAdapter, Parser]);
 
-barkeep.use('GET_USER', ({ id }) => {
+barkeep.use('GET:USER', ({ id }) => {
 	if (id === 1) {
-		return 'SUCCESS'
+		return barkeep.extensions.msg('USER', { name: 'Nikhil Saraf' });
 	} else {
 		return barkeep.extensions.error('HELLA WRONG');
 	}
@@ -30,5 +30,5 @@ export const POST = (req) => {
   return getRequest(req);
 }
 
-barkeep.ask(GET({ path: '/user' }));
-barkeep.as
+const id = 1;
+barkeep.ask(GET({ path: '/user', body: { id }}));

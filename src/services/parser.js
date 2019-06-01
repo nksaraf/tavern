@@ -24,23 +24,10 @@ const crudMethodToAction = {
 
 export default class Parser {
 	parseRequest = async ({ req }) => {
-		return this.error('WATCHA DOING');
 		const { path, method, body, query } = req;
 
-		const parts = _.split(_.trim(path, '/'), '/');
-		const main = parts[0];
-
-		let action;
-		if (entities.includes(main.toLowerCase())) {
-			action = `${crudMethodToAction[method]}_${main.toUpperCase()}`
-		} else if (method === 'GET') {
-			action = `GET_${main.toUpperCase()}`
-		} else if (method === 'POST') {
-			action = _.snakeCase(main).toUpperCase();
-		} else {
-			return this.error('Unsupported method', 404);
-		}
-
+		const plainUrl = _.trim(path, '/');
+		const action = `${method}:${plainUrl}`.toUpperCase();
 		return {
 			type: 'PARSED_REQUEST',
 			payload: {

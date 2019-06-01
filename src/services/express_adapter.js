@@ -41,7 +41,7 @@ export default class ExpressAdapter {
     }
   }
 
-  subscriptions= {
+  subscriptions = {
     'LISTEN': this.listen
   }
 }

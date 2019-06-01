@@ -119,6 +119,7 @@ const makeError = (message, status=400, ctx={}) => {
  * @return {string[]} matchedPatterns
  */
 const matchPatterns = (value, matchers) => {
+  value = value.toUpperCase();
   const matchedPatterns = [];
   for (const pattern in matchers) {
     if (matchers[pattern].on(value) !== null) {
@@ -239,6 +240,7 @@ export default class Barkeep {
   use = (pattern, handler) => {
     assert(typeof pattern === 'string');
     assert(isFunction(handler));
+    pattern = pattern.toUpperCase();
     if (!(pattern in this._listeners)) {
       this._listeners[pattern] = [];
       this._matchers[pattern] = gex(pattern);
