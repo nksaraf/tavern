@@ -1,0 +1,35 @@
+{
+  "name": "tavern",
+  "version": "0.0.1",
+  "description": "WIP Super simple framework for service-based architecture in monolithic servers",
+  "main": "tavern/index.js",
+  "scripts": {
+    "start": "node tavern/index.js",
+    "deploy": "npm run clean && npm run build && push",
+    "build": "npm run clean && babel src --out-dir tavern",
+    "prepublish": "npm run build",
+    "clean": "rm -rf tavern && mkdir tavern",
+    "live_test": "NODE_ENV=test nodemon --exec npm run test",
+    "test": "NODE_ENV=test babel-node test.js -- ",
+    "check": "NODE_ENV=test npm run test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nksaraf/tavern.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nksaraf/tavern/issues"
+  },
+  "homepage": "https://github.com/nksaraf/tavern#readme",
+  "author": "Nikhil Saraf <nsaraf98@gmail.com>",
+  "dependencies": {
+    "gex": "^0.3.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.5",
+    "@babel/plugin-proposal-class-properties": "^7.4.4",
+    "@babel/preset-env": "^7.4.5",
+    "nodemon": "^1.19.1"
+  }
+}
