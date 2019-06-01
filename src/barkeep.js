@@ -14,8 +14,7 @@ import assert from 'assert';
  */
 
 /**
- * @typedef Handler
- * @type    {function}
+ * @typedef {function} Handler
  * @param   {Object}  [payload]
  * @param   {Object}  [context]
  * @param   {string}  [type]
@@ -23,10 +22,16 @@ import assert from 'assert';
  */
 
 /**
- * @typedef   {Object} Service
- * @property  {Object.<string, Handler>} subscriptions - Message patterns that the service wants to
- * listen to and the corresponding list of handlers
+ * @interface
  */
+export class Service {
+  /**
+   * Message patterns that the service 
+   * wants to listen to and the corresponding list of handlers
+   * @type {Object.<string,Handler>}
+   */
+  subscriptions
+}
 
 /**
  * @typedef {Object} Gex
@@ -35,18 +40,18 @@ import assert from 'assert';
 /**
  * Checks if the @code{message} matches with the @code{pattern} using
  * glob-matching rules
- * @private
  * @param  {Message}    message
  * @param  {string}     pattern
  * @return {boolean}
  */
-const isType = (message, pattern) => {
+export const isType = (message, pattern) => {
   return gex(pattern).on(message.type) !== null;
 }
 
 /**
  * Resolve which of the @code{response} to reply to the service which
  * sent this @code{message}
+ * @private
  * @param  {Message[]}  responses
  * @param  {Message}    message
  * @return {Message}
@@ -67,7 +72,6 @@ const findResponseToMessage = (responses, message) => {
 
 /**
  * Checks if the @code{message} is an error message
- * @private
  * @param  {Message}    message 
  * @return {boolean}
  */
@@ -114,6 +118,7 @@ const makeError = (message, status=400, ctx={}) => {
 
 /**
  * List of patterns from @code{matchers} that match the given @code{value}
+ * @private
  * @param  {string} value    
  * @param  {Object.<string, Gex>} matchers
  * @return {string[]} matchedPatterns
@@ -131,6 +136,7 @@ const matchPatterns = (value, matchers) => {
 
 /**
  * True if @code{object} is a function or a constructor
+ * @private
  * @param  {any} object 
  * @return {boolean}
  */
@@ -140,9 +146,11 @@ const isFunction = (object) => {
 
 /**
  * The Barkeep
+ * @class
  * @property  {function(Service)}  register
  */
 export default class Barkeep {
+
   /** @type {Service[]} List of services registered */
   _services = []
   /**
@@ -158,12 +166,12 @@ export default class Barkeep {
 
   /**
    * [description]
-   * @param  {[type]} message [description]
-   * @param  {[type]} payload [description]
-   * @param  {[type]} ctx     [description]
-   * @return {[type]}         [description]
+   * @param  {Message|string} message [description]
+   * @param  {Object} [payload] [description]
+   * @param  {Object} [ctx]     [description]
+   * @return {Message}         [description]
    */
-  ask = async (message, payload, ctx) => {
+  async ask(message, payload, ctx) {
     message = makeMessage(message, payload, ctx);
     if (message === undefined || message === null || message.type === undefined) {
       return;
@@ -205,7 +213,13 @@ export default class Barkeep {
     return findResponseToMessage(responses, message);
   }
 
-  tell = async (message, payload, ctx) => {
+  /**
+   * [description]
+   * @param  {Message|string} message [description]
+   * @param  {Object} [payload] [description]
+   * @param  {Object} [ctx]     [description]
+   */
+  async tell(message, payload, ctx) {
     message = makeMessage(message, payload, ctx);
     if (message === undefined || message === null || message.type === undefined) {
       return;
@@ -231,13 +245,13 @@ export default class Barkeep {
   }
 
   /**
-   * Add the given @code{handler} to the list of listeners corresponding to the given
-   * @code{pattern}
+   * Add the given {@link handler} to the list of listeners corresponding to the given
+   * pattern
    * @param  {string}   pattern 
    * @param  {Handler}  handler 
    * @return {Barkeep} this
    */
-  use = (pattern, handler) => {
+  use(pattern, handler) {
     assert(typeof pattern === 'string');
     assert(isFunction(handler));
     pattern = pattern.toUpperCase();
@@ -249,6 +263,10 @@ export default class Barkeep {
     return this;
   }
 
+  /**
+   * [extensions description]
+   * @type {Object}
+   */
   extensions = {
     barkeep: {
       ask: this.ask,
@@ -264,13 +282,11 @@ export default class Barkeep {
    * Register the service with the Barkeep. This involves adding listeners for
    * all the patterns that the service subscribes too. It can register a list of services too, 
    * and when given functions or constructors, calls them before registering the service.
-   * The signature of the handlers is as follows:
-   *  @code{([payload], [context], [type]) => {(string|Message|undefined)}}
-   *  
-   * @param   {Service} service  Collection of handlers to add as listeners
-   * @return  {Barkeep} @code{barkeep} (for method chaining)
+   *
+   * @param  {Object} service 
+   * @return {Barkeep} this
    */
-  register = (service) => {
+  register(service) {
     if (Array.isArray(service)) {
       for (let i = 0; i < service.length; i++) {
         this.register(service[i]);
@@ -291,7 +307,10 @@ export default class Barkeep {
     return this;
   }
 
-  listen = async () => {
+  /**
+   * Listen to incoming messages
+   */
+  async listen() {
     await this.tell('LISTEN');
   }
 }
