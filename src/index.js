@@ -17,3 +17,4 @@ export default tavern;
 
 export { default as Barkeep } from './barkeep';
 export * from './services';
+export * from './utils';

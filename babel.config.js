@@ -16,6 +16,13 @@ module.exports = function (api) {
 
   return {
     presets,
-    plugins
+    plugins,
+    env: {
+      test: {
+        plugins: [
+          "istanbul"
+        ]
+      }
+    }
   };
 }

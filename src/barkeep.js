@@ -3,11 +3,16 @@
  */
 
 import mixin from 'merge-descriptors';
-import gex from 'gex';
+import multimatch from 'multimatch';
 import assert from 'assert';
+import _ from 'lodash';
+import { createCustomError } from './utils';
+
+const TavernError = createCustomError('TavernError');
 
 /**
  * @typedef   {Object} Message
+ * 
  * @property  {string} type - Description of message, matched against listener patterns
  * @property  {Object} payload - Additional information important to the message
  * @property  {Object} context - Metadata related to the message and its passage
@@ -15,6 +20,7 @@ import assert from 'assert';
 
 /**
  * @typedef {function} Handler
+ * 
  * @param   {Object}  [payload]
  * @param   {Object}  [context]
  * @param   {string}  [type]
@@ -22,8 +28,22 @@ import assert from 'assert';
  */
 
 /**
- * @interface
+ * True, if value matches the given pattern(s), uses multimatch package
+ * @param  {string} value   
+ * @param  {string|string[]} pattern
+ * @return {boolean}
  */
+const match = (message, pattern) => {
+  if (typeof message === 'string') {
+    return multimatch(message, pattern).length > 0;
+  } else if (typeof message === 'object' && 'type' in message) {
+    return match(message.type, pattern);
+  } else {
+    return false;
+  }
+}
+
+/** @interface */
 export class Service {
   /**
    * Message patterns that the service 
@@ -31,21 +51,6 @@ export class Service {
    * @type {Object.<string,Handler>}
    */
   subscriptions
-}
-
-/**
- * @typedef {Object} Gex
- */
-
-/**
- * Checks if the @code{message} matches with the @code{pattern} using
- * glob-matching rules
- * @param  {Message}    message
- * @param  {string}     pattern
- * @return {boolean}
- */
-export const isType = (message, pattern) => {
-  return gex(pattern).on(message.type) !== null;
 }
 
 /**
@@ -70,13 +75,40 @@ const findResponseToMessage = (responses, message) => {
   return responses[0];
 }
 
+/*  Function to test if an object is a plain object, i.e. is constructed
+**  by the built-in Object constructor and inherits directly from Object.prototype
+**  or null. Some built-in objects pass the test, e.g. Math which is a plain object
+**  and some host or exotic objects may pass also.
+**
+**  @param {any} obj - value to test
+**  @returns {Boolean} true if passes tests, false otherwise
+*/
+const isPlainObject = (obj) => {
+  // Basic check for Type object that's not null
+  if (typeof obj == 'object' && obj !== null) {
+
+    // If Object.getPrototypeOf supported, use it
+    if (typeof Object.getPrototypeOf == 'function') {
+      var proto = Object.getPrototypeOf(obj);
+      return proto === Object.prototype || proto === null;
+    }
+    
+    // Otherwise, use internal class
+    // This should be reliable as if getPrototypeOf not supported, is pre-ES5
+    return Object.prototype.toString.call(obj) == '[object Object]';
+  }
+  
+  // Not an object
+  return false;
+}
+
 /**
  * Checks if the @code{message} is an error message
  * @param  {Message}    message 
  * @return {boolean}
  */
 const isError = (message) => {
-  return isType(message, '*ERROR');
+  return match(message, '*ERROR');
 }
 
 /**
@@ -88,30 +120,56 @@ const isError = (message) => {
  * @param  {Object}     [ctx={}]     
  * @return {Message}         
  */
-const makeMessage = (message, _payload={}, _ctx={}) => {
-  if (typeof message === 'object' && message.type !== undefined) {
-    const { type, payload=_payload, ctx=_ctx, ...rest } = message;
-    if (type === undefined) {
-      return makeError('No type for message provided');
+const makeMessage = (message, payload={}, ctx={}) => {
+  if (message === null) {
+    return undefined;
+  } 
+
+  else if (
+    typeof message === 'object' 
+    && message.type !== undefined 
+    && typeof message.type === 'string'
+  ) {
+    return { 
+      type: message.type, 
+      payload: message.payload || payload, 
+      ctx: (message.ctx || ctx) 
+    };
+  } 
+
+  else if (typeof message === 'string') {
+    return { 
+      type: message, 
+      payload, 
+      ctx 
     }
-    return { type, payload, ctx: { ...ctx, ...rest }};
-  } else if (typeof message === 'string') {
-    return { type: message, payload: _payload, ctx: _ctx }
   }
+
   return undefined;
 }
 
 /**
  * Make an error message
- * @param  {string} message 
+ * @param  {string|Error} error 
  * @param  {Number} [status=400]
  * @param  {Object} [ctx={}]    
  * @return {Message}        
  */
-const makeError = (message, status=400, ctx={}) => {
+const makeError = (error, status=400, ctx={}) => {
+  let name, message, _status;
+  if (typeof error === 'string') {
+    name = 'ERROR';
+    message = error;
+    _status = status;
+  } else {
+    name = error.name;
+    message = error.message;
+    _status = error.status || status;
+  }
+
   return {
-    type: 'ERROR',
-    payload: { error: message, status },
+    type: _.snakeCase(name).toUpperCase(),
+    payload: { error: message, status: _status },
     ctx: ctx
   };
 }
@@ -124,14 +182,8 @@ const makeError = (message, status=400, ctx={}) => {
  * @return {string[]} matchedPatterns
  */
 const matchPatterns = (value, matchers) => {
-  value = value.toUpperCase();
-  const matchedPatterns = [];
-  for (const pattern in matchers) {
-    if (matchers[pattern].on(value) !== null) {
-      matchedPatterns.push(pattern);
-    }
-  }
-  return matchedPatterns;
+  return Object.keys(matchers)
+    .filter(pattern => match(value, matchers[pattern]));
 }
 
 /**
@@ -144,104 +196,44 @@ const isFunction = (object) => {
   return !!(object && object.constructor && object.call && object.apply);
 }
 
+const addApi = (func, barkeep, options={ setThisToBarkeep: false }) => async () => {
+  [].push.call(arguments, barkeep);
+  const that = options.setThisToBarkeep ? barkeep : null;
+  return await func.apply(that, arguments);
+}
+
 /**
  * The Barkeep
  * @class
  * @property  {function(Service)}  register
  */
 export default class Barkeep {
+  constructor() {
+    this._listeners = {};
+    this._matchers = {};
 
-  /** @type {Service[]} List of services registered */
-  _services = []
-  /**
-   * List of handlers for each pattern being listened to
-   * @type {Object.<string, Handler[]>}
-   */
-  _listeners = {}
-  /**
-   * Glob-matching objects corresponding to message patterns
-   * @type {Object.<string, Gex>}
-   */
-  _matchers = {}
+    this.ask = this.ask.bind(this);
+    this.tell = this.tell.bind(this);
+    this.register = this.register.bind(this);
+    this.use = this.use.bind(this);
+    this.listen = this.listen.bind(this);
 
-  /**
-   * [description]
-   * @param  {Message|string} message [description]
-   * @param  {Object} [payload] [description]
-   * @param  {Object} [ctx]     [description]
-   * @return {Message}         [description]
-   */
-  async ask(message, payload, ctx) {
-    message = makeMessage(message, payload, ctx);
-    if (message === undefined || message === null || message.type === undefined) {
-      return;
-    }
-    const matchedPatterns = matchPatterns(message.type, this._matchers);
-    const responses = [];
-    for (let i = 0; i < matchedPatterns.length; i++) {
-      const pattern = matchedPatterns[i];
-      // looping through services that subscribe
-      for (let j = 0; j < this._listeners[pattern].length; j++) {
-        const handler = this._listeners[pattern][j];
-        let response;
-        try {
-          const { type, payload, ctx } = message;
-          response = makeMessage(await handler(payload, ctx, type));
-        } catch (error) {
-          response = makeError(error.message, 400);
-        }
-        if (response !== null && response !== undefined) {
-          if (!message.ctx.private && !response.ctx.private) {
-            this.tell(response);
-          }
-          response.ctx.request = message.type;
-          responses.push(response);
-        }
-      }
+    this._api = {
+      ask: this.ask,
+      tell: this.tell,
+      register: this.register,
+      use: this.use,
+      listen: this.listen
     }
 
-    if (responses.length === 0) {
-      const errorMsg = makeMessage({
-        type: 'ERROR',
-        payload: { error: 'Reply not found', status: 404 },
-        ctx: { message: message.type }
-      });
-      this.tell(errorMsg);
-      return errorMsg;
-    }
-
-    return findResponseToMessage(responses, message);
-  }
-
-  /**
-   * [description]
-   * @param  {Message|string} message [description]
-   * @param  {Object} [payload] [description]
-   * @param  {Object} [ctx]     [description]
-   */
-  async tell(message, payload, ctx) {
-    message = makeMessage(message, payload, ctx);
-    if (message === undefined || message === null || message.type === undefined) {
-      return;
-    }
-    const matchedPatterns = matchPatterns(message.type, this._matchers);
-    for (let i = 0; i < matchedPatterns.length; i++) {
-      const pattern = matchedPatterns[i];
-      // looping through services that subscribe
-      for (let j = 0; j < this._listeners[pattern].length; j++) {
-        const handler = this._listeners[pattern][j];
-        const { type, payload, ctx } = message;
-        // try {
-          handler(payload, ctx, type)
-        // } catch (error) {
-        //   this.tell({
-        //     type: 'ERROR',
-        //     payload: { error: error.message, status: 999 },
-        //     context: { message: message.type }
-        //   });
-        // }
-      }
-    }
+    this._extensions = {
+      ...this.api,
+      barkeep: this._api,
+      error: makeError,
+      isError: isError,
+      isType: match,
+      msg: makeMessage
+    }; 
   }
 
   /**
@@ -249,33 +241,35 @@ export default class Barkeep {
    * pattern
    * @param  {string}   pattern 
    * @param  {Handler}  handler 
+   * @param  {Object}   [options={}]
    * @return {Barkeep} this
    */
-  use(pattern, handler) {
-    assert(typeof pattern === 'string');
-    assert(isFunction(handler));
+  use(pattern, handler, options={ log: true, setThisToBarkeep: true }) {
+    if (!(typeof pattern === 'string')) { 
+      this.tell(makeError(new TavernError('Subscription pattern must be a string')));
+      return this;
+    }
+
+    if (!isFunction(handler)) {
+      this.tell(makeError(new TavernError('Handler is not a function')));
+      return this;
+    }
+
+    if (options.setThisToBarkeep) {
+      handler = addApi(handler, this._extensions, options);
+    }
+
     pattern = pattern.toUpperCase();
     if (!(pattern in this._listeners)) {
       this._listeners[pattern] = [];
-      this._matchers[pattern] = gex(pattern);
+      this._matchers[pattern] = pattern.split('|').map((part) => _.trim(part, ' '));
     }
     this._listeners[pattern].push(handler);
-    return this;
-  }
 
-  /**
-   * [extensions description]
-   * @type {Object}
-   */
-  extensions = {
-    barkeep: {
-      ask: this.ask,
-      tell: this.tell
-    },
-    error: makeError,
-    isError: isError,
-    isType: isType,
-    msg: makeMessage
+    if (options.log) {
+      this.tell(makeMessage('SUBSCRIBED', { patterns: [pattern]}));
+    }
+    return this;
   }
 
   /**
@@ -291,26 +285,118 @@ export default class Barkeep {
       for (let i = 0; i < service.length; i++) {
         this.register(service[i]);
       }
-    }
+    } 
+
     else if (isFunction(service)) {
       this.register(new service());
-    }
-    else {
-      assert('subscriptions' in service, 'No subscriptions found in service');
-      console.log('Subscribing', Object.keys(service.subscriptions));
-      mixin(service, this.extensions, false);
-      this._services.push(service);
-      for (const pattern of Object.keys(service.subscriptions)) {
-        this.use(pattern, service.subscriptions[pattern]);
+    } 
+
+    else if (isPlainObject(service)) {
+      for (const pattern of Object.keys(service)) {
+        this.use(pattern, service[pattern], { log: false });
       }
+      this.tell(makeMessage('SUBSCRIBED', { patterns: Object.keys(service) }));
+    } 
+
+    else {
+      if (!('subscriptions' in service)) {
+        this.tell(makeError(new TavernError('Invalid service')));
+        return this;
+      }
+
+      mixin(service, this._extensions, false);
+      for (const pattern of Object.keys(service.subscriptions)) {
+        this.use(pattern, service.subscriptions[pattern], { addApi: false, log: false });
+      }
+
+      let name = service.constructor ? service.constructor.name : null;
+      this.tell(makeMessage('SUBSCRIBED', { patterns: Object.keys(service.subscriptions), name }));
     }
+
     return this;
   }
 
   /**
-   * Listen to incoming messages
+   * Ask for a response to given message from available services
+   * @param  {Message|string} message Type of the message or the whole {@link Message}
+   * @param  {Object} [payload] Payload of the message
+   * @param  {Object} [ctx]     Context associated with the message
+   * @return {Message}  Response from services
    */
-  async listen() {
-    await this.tell('LISTEN');
+  async ask(message, payload, ctx) {
+    const request = makeMessage(message, payload, ctx);
+    if (request === undefined) {
+      return this.tell(makeError(new TavernError('Invalid message to ask')));
+    }
+
+    const matchedPatterns = matchPatterns(request.type, this._matchers);
+    const responses = [];
+    for (let i = 0; i < matchedPatterns.length; i++) {
+      const pattern = matchedPatterns[i];
+      // looping through services that subscribe
+      for (let j = 0; j < this._listeners[pattern].length; j++) {
+        const handler = this._listeners[pattern][j];
+        let response;
+        try {
+          const { type, payload, ctx } = request;
+          response = makeMessage(await handler(payload, ctx, type));
+        } catch (error) {
+          response = makeError(error);
+        }
+        if (response !== null && response !== undefined) {
+          if (!request.ctx.private && !response.ctx.private) {
+            this.tell(response);
+          }
+          response.ctx.request = request.type;
+          responses.push(response);
+        }
+      }
+    }
+
+    if (responses.length === 0) {
+      const errorMsg = makeError(new TavernError('No reply', 404), ctx={ message: request.type });
+      return this.tell(errorMsg);
+    }
+
+    return findResponseToMessage(responses, request);
+  }
+
+
+  async _asyncTell(message) {
+    const matchedPatterns = matchPatterns(message.type, this._matchers);
+    for (let i = 0; i < matchedPatterns.length; i++) {
+      const pattern = matchedPatterns[i];
+      for (let j = 0; j < this._listeners[pattern].length; j++) {
+        const handler = this._listeners[pattern][j];
+        const { type, payload, ctx } = message;
+        handler(payload, ctx, type)
+      }
+    }
+  }
+
+  /**
+   * Tells all the subscribed listeners about the given message asyncronously
+   * and returns the same message to further be returned to answer requests.
+   * 
+   * @param  {Message|string} message Type of the message or the whole {@link Message}
+   * @param  {Object} [payload]  Payload of the message
+   * @param  {Object} [ctx]      Context associated with the message
+   */
+  tell(message, payload, ctx) {
+    const event = makeMessage(message, payload, ctx);
+    if (event === undefined) {
+      return makeError(new TavernError('Invalid message to tell'));
+    } else {
+      this._asyncTell(event);
+      return event;
+    }
+  }
+
+  /**
+   * Ask any available transportation services to start listening for
+   * new messages (publishes LISTEN command)
+   */
+  listen() {
+    this.tell('LISTEN');
   }
 }

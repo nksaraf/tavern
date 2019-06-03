@@ -25,8 +25,13 @@ export default class ExpressAdapter {
       payload: { req: reqPayload }
     });
 
-    const status = payload.status || (type === 'ERROR' ? 400 : 200);
-    res.status(status).json({ ...payload, action: ctx.action, type });
+    if (!this.isType(type, 'RESPONSE')) {
+
+    }
+
+    const response = payload;
+    const status = response.payload.status || (this.isError(response.type) ? 400 : 200);
+    res.status(status).json({ ...response.payload, action: response.ctx.request, type: response.type });
     next();
   }
 
@@ -35,7 +40,7 @@ export default class ExpressAdapter {
       this.app.use(this.middleware);
       const server = http.createServer(this.app);
       await server.listen(process.env.PORT || 5000);
-      console.log(`🚀 Serving at http://:::${process.env.PORT}/${process.env.ENDPOINT}`);
+      console.log(`🚀 Serving at http://:::${process.env.PORT}/`);
     } catch (error) {
       this.barkeep.tell(this.error(error.message));
     }

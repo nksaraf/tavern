@@ -31,24 +31,46 @@ export default class Logger {
 	getRepr = (value) => {
 		if (value === undefined || value === null) return '?';
 		if (Array.isArray(value)) return `[${'.'.repeat(value.length)}]`;
-		if (isPlainObject(value)) return `{${'.'.repeat(Object.keys(value).length)}}`;
+		// if (isPlainObject(value)) return `{ ${'.'.repeat(Object.keys(value).length)} }`;
+		if (isPlainObject(value)) return `{ ${Object.keys(value).join(' ')} }`;
 		else return value;
 	}
 
-	log = async (payload, ctx, type) => {
-		if (type === 'ERROR') {
-			console.log('🍷'.bold.red, 'ERROR'.underline.red, `[ ${payload.status}: ${payload.error} ]`.red)
+	logError = ({ status, error }, ctx, type) => {
+		let message = (type === 'ERROR') ? `${status}: ${error}`: `${error}`;
+		console.log('🍷', type.underline.red, message.red );
+	}
+
+	logSubscription = ({ patterns, name }, ctx, type) => {
+		const formattedName = name ? `<${name}>`.magenta : '';
+		console.log(
+			'🍾', 
+			type.underline.blue,
+			patterns.map(pattern => pattern.toUpperCase()).join(', ').green, 
+			formattedName
+		);
+	}
+
+	logMessage = (payload, ctx, type) => {
+		const payloadRepr = Object.keys(payload)
+			.map((key) => `${key}:`.blue + ` ${this.getRepr(payload[key])}`.magenta)
+			.join(', ');
+
+		console.log('🍻', type.underline.green, (Object.keys(payload).length > 0) ? payloadRepr : '');
+	}
+
+	logResponse = (payload, ctx, type) => {
+		if (this.isError(payload.type)) {
+			console.log('🍷', type.underline.red, payload.type.red);
 		} else {
-			const payloadRepr = Object.keys(payload).map((key) => `${key}:`.blue + ` ${this.getRepr(payload[key])}`.magenta).join(', ');
-			console.log(
-				'🍻'.bold.grey, 
-				type.underline.green, 
-				(Object.keys(payload).length > 0) ? payloadRepr : ''
-			);
+			console.log('🍸', type.underline.green, payload.type.blue);
 		}
 	}
 
 	subscriptions = {
-		'*': this.log
+		'*ERROR': this.logError,
+		'SUBSCRIBED': this.logSubscription,
+		'*|!*ERROR|!SUBSCRIBED|!RESPONSE': this.logMessage,
+		'RESPONSE': this.logResponse
 	}
 }

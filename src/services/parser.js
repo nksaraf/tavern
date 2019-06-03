@@ -1,6 +1,15 @@
+import _ from 'lodash';
+import { createCustomError } from '../utils';
+
+const ParserError = createCustomError('ParserError');
+
 export default class Parser {
-	parseRequest = async ({ req }) => {
+	parseRequest = ({ req }) => {
 		const { path, method, body, query } = req;
+
+		if (path === undefined || method === undefined) {
+			throw new ParserError('Request does not contain path and method'); 
+		}
 
 		const plainUrl = _.trim(path, '/');
 		const action = `${method}:${plainUrl}`.toUpperCase();

@@ -9,9 +9,9 @@
     "build": "npm run clean && babel src --out-dir tavern",
     "prepublish": "npm run build",
     "clean": "rm -rf tavern && mkdir tavern",
-    "live_test": "NODE_ENV=test nodemon --exec npm run test",
-    "test": "NODE_ENV=test babel-node test.js -- ",
-    "check": "NODE_ENV=test npm run test",
+    "test:live": "NODE_ENV=test nodemon --exec npm run test:check",
+    "test": "nyc ava",
+    "test:check": "NODE_ENV=test babel-node test/test.js -- ",
     "jsdocs": "node_modules/.bin/jsdoc --configure .jsdoc.json --verbose",
     "docs": "node_modules/.bin/esdoc"
   },
@@ -24,14 +24,40 @@
   },
   "homepage": "https://github.com/nksaraf/tavern#readme",
   "author": "Nikhil Saraf <nsaraf98@gmail.com>",
+  "ava": {
+    "require": [
+      "./test/_register.js"
+    ],
+    "files": [
+      "test/*"
+    ],
+    "sources": [
+      "src/**/*",
+      "test/*"
+    ],
+    "watch": true
+  },
+  "nyc": {
+    "require": [
+      "@babel/register"
+    ],
+    "reporter": [
+      "lcov",
+      "text"
+    ],
+    "sourceMap": false,
+    "instrument": false
+  },
   "dependencies": {
     "body-parser": "^1.19.0",
     "colors": "^1.3.3",
     "express": "^4.17.1",
-    "gex": "^0.3.0",
     "http": "0.0.0",
+    "matcher": "^2.0.0",
     "merge-descriptors": "^1.0.1",
-    "morgan": "^1.9.1"
+    "minimatch": "^3.0.4",
+    "morgan": "^1.9.1",
+    "multimatch": "^4.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.4.4",
@@ -39,14 +65,17 @@
     "@babel/node": "^7.4.5",
     "@babel/plugin-proposal-class-properties": "^7.4.4",
     "@babel/preset-env": "^7.4.5",
+    "ava": "^2.0.0",
+    "babel-plugin-istanbul": "^5.1.4",
     "documentation": "^11.0.0",
     "esdoc": "^1.1.0",
-    "esdoc-standard-plugin": "^1.0.0",
     "esdoc-ecmascript-proposal-plugin": "^1.0.0",
     "esdoc-importpath-plugin": "^1.0.2",
+    "esdoc-standard-plugin": "^1.0.0",
     "jsdoc": "^3.6.2",
     "jsdoc-babel": "^0.5.0",
     "minami": "^1.2.3",
-    "nodemon": "^1.19.1"
+    "nodemon": "^1.19.1",
+    "nyc": "^14.1.1"
   }
 }

@@ -9,9 +9,7 @@ export default class RequestHandler {
 		};
 		const action = { ...parsedRequest.payload, ctx: { req }};
 		const response = await this.barkeep.ask(action);
-		response.ctx.private = true;
-		response.ctx.action = action.type;
-		return response;
+		return this.msg('RESPONSE', response, { request: action });
 	}
 
 	subscriptions = {
