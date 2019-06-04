@@ -3,6 +3,7 @@
  */
 
 import Barkeep from './barkeep';
+import types from './types';
 
 /**
  * Factory function to create an instance of {@link Barkeep}

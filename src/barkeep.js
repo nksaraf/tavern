@@ -11,7 +11,7 @@ const TavernError = createCustomError('TavernError');
 
 /**
  * True, if value matches the given pattern(s), uses multimatch package
- * @param  {string} value
+ * @param  {string} message
  * @param  {string|string[]} pattern
  * @return {boolean}
  */
@@ -127,15 +127,10 @@ const addApi = (func, barkeep, options = { setThisToBarkeep: false }) => (
  * @property  {function(Service)}  register
  */
 export default class Barkeep {
-  #listeners = {}
-
-  #matchers = {}
-
-  #api = {}
-
-  #extensions = {}
-
   constructor() {
+    this._listeners = {};
+    this._matchers = {};
+
     this.ask = this.ask.bind(this);
     this.tell = this.tell.bind(this);
     this.listen = this.listen.bind(this);
@@ -145,7 +140,7 @@ export default class Barkeep {
     this.match = match;
     this.msg = makeMessage;
 
-    this.#api = {
+    this._api = {
       ask: this.ask,
       tell: this.tell,
       listen: this.listen,
@@ -156,9 +151,9 @@ export default class Barkeep {
       msg: this.msg,
     };
 
-    this.#extensions = {
-      ...this.#api,
-      barkeep: this.#api
+    this._extensions = {
+      ...this._api,
+      barkeep: this._api
     };
   }
 
@@ -181,14 +176,14 @@ export default class Barkeep {
       return this;
     }
 
-    const wrappedHandler = addApi(handler, this.#extensions, options);
+    const wrappedHandler = addApi(handler, this._extensions, options);
     const upperCasePattern = pattern.toUpperCase();
 
-    if (!(pattern in this.#listeners)) {
-      this.#listeners[upperCasePattern] = [];
-      this.#matchers[upperCasePattern] = upperCasePattern.split('|').map((part) => _.trim(part, ' '));
+    if (!(pattern in this._listeners)) {
+      this._listeners[upperCasePattern] = [];
+      this._matchers[upperCasePattern] = upperCasePattern.split('|').map((part) => _.trim(part, ' '));
     }
-    this.#listeners[upperCasePattern].push(wrappedHandler);
+    this._listeners[upperCasePattern].push(wrappedHandler);
 
     if (options.log) {
       this.tell('SUBSCRIBED', { patterns: [upperCasePattern] });
@@ -223,7 +218,7 @@ export default class Barkeep {
         return this;
       }
 
-      mixin(service, this.#extensions, false);
+      mixin(service, this._extensions, false);
       for (const pattern of Object.keys(service.subscriptions)) {
         this.use(pattern, service.subscriptions[pattern], { addApi: false, log: false });
       }
@@ -237,7 +232,7 @@ export default class Barkeep {
 
   async _askRemainingHandlers(request, handlers, index) {
     for (let i = index; i < handlers.length; i += 1) {
-      handlers[i](request.payload, request.ctx, request.type, this.#extensions)
+      handlers[i](request.payload, request.ctx, request.type, this._extensions)
         .then((response) => this.tell(response, null, request.ctx));
     }
   }
@@ -255,17 +250,17 @@ export default class Barkeep {
       return this.throw(new TavernError('Invalid message to ask'));
     }
 
-    const matchedPatterns = matchPatterns(request.type, this.#matchers);
+    const matchedPatterns = matchPatterns(request.type, this._matchers);
     let finalResponse;
 
-    const handlers = _.flatMap(Object.values(_.pick(this.#listeners, matchedPatterns)));
+    const handlers = _.flatMap(Object.values(_.pick(this._listeners, matchedPatterns)));
     let i;
     for (i = 0; i < handlers.length; i += 1) {
       const handler = handlers[i];
       let response;
       try {
         response = this.msg(await handler(
-          request.payload, request.ctx, request.type, this.#extensions,
+          request.payload, request.ctx, request.type, this._extensions,
         ), null, request.ctx);
       } catch (error) {
         response = this.error(error, null, request.ctx);
@@ -292,13 +287,13 @@ export default class Barkeep {
 
 
   async _asyncTell(message) {
-    const matchedPatterns = matchPatterns(message.type, this.#matchers);
+    const matchedPatterns = matchPatterns(message.type, this._matchers);
     for (let i = 0; i < matchedPatterns.length; i += 1) {
       const pattern = matchedPatterns[i];
-      for (let j = 0; j < this.#listeners[pattern].length; j += 1) {
-        const handler = this.#listeners[pattern][j];
+      for (let j = 0; j < this._listeners[pattern].length; j += 1) {
+        const handler = this._listeners[pattern][j];
         const { type, payload, ctx } = message;
-        handler(payload, ctx, type, this.#extensions);
+        handler(payload, ctx, type, this._extensions);
       }
     }
   }
@@ -310,6 +305,7 @@ export default class Barkeep {
    * @param  {Message|string} message Type of the message or the whole {@link Message}
    * @param  {Object} [payload]  Payload of the message
    * @param  {Object} [ctx]      Context associated with the message
+   * @returns {Message} same
    */
   tell(message, payload, ctx) {
     const event = this.msg(message, payload, ctx);
