@@ -1,2 +1,6 @@
 src
-test.js
+test
+docs
+
+.nyc_output
+coverage

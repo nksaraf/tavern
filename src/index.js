@@ -14,5 +14,7 @@ const tavern = () => new Barkeep();
 
 export default tavern;
 export { default as Barkeep } from './barkeep';
-export * from './services';
-export * from './utils';
+export {
+  Logger, ExpressAdapter, RequestHandler, Parser
+} from './services';
+export { createCustomError } from './utils';
