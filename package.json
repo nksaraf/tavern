@@ -5,7 +5,7 @@
   "main": "tavern/index.js",
   "scripts": {
     "start": "node tavern/index.js",
-    "deploy": "npm run clean && npm run build && push",
+    "deploy": "npm run clean && npm run build && npm link",
     "build": "npm run clean && babel src --out-dir tavern",
     "prepublishOnly": "npm run build",
     "clean": "rm -rf tavern && mkdir tavern",

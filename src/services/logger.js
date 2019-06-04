@@ -9,7 +9,6 @@ export default class Logger {
   getRepr = (value) => {
     if (value === undefined || value === null) return '?';
     if (Array.isArray(value)) return `[${'.'.repeat(value.length)}]`;
-    // if (isPlainObject(value)) return `{ ${'.'.repeat(Object.keys(value).length)} }`;
     if (_.isPlainObject(value)) return `{ ${Object.keys(value).join(' ')} }`;
     else return value;
   }
@@ -24,8 +23,8 @@ export default class Logger {
     this.log(
       '🍾',
       type.underline.blue,
-      patterns.map((pattern) => pattern.toUpperCase()).join(', ').green,
-      formattedName
+      formattedName,
+      patterns.map((pattern) => pattern.toUpperCase()).join(', ').green
     );
   }
 
@@ -50,10 +49,10 @@ export default class Logger {
   }
 
   subscriptions = {
-    '*ERROR': this.logError,
     SUBSCRIBED: this.logSubscription,
-    '*|!*ERROR|!SUBSCRIBED|!RESPONSE|!LOG': this.logMessage,
     RESPONSE: this.logResponse,
-    LOG: this.logLog
+    LOG: this.logLog,
+    '*ERROR': this.logError,
+    '*|!*ERROR|!SUBSCRIBED|!RESPONSE|!LOG': this.logMessage,
   }
 }

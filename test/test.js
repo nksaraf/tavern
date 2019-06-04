@@ -13,7 +13,16 @@ barkeep.use('GET:USER', function({ id }) {
 	} else {
 		return this.error(new UserError(`${id} is hella wrong`));
 	}
-})
+});
+
+barkeep.use('GET:USER', function({ id }) {
+  const numId = Number(id);
+  if (numId === 1) {
+    return this.msg('USER', { name: 'Klay Curry' });
+  } else {
+    return this.error(new UserError(`${id} is hella wrong`));
+  }
+});
 
 console.log();
 
@@ -36,9 +45,9 @@ export const POST = (req) => {
   return getRequest(req);
 }
 
-const id = 2;
-barkeep.listen();
-// barkeep.ask(GET({ path: '/user', body: { id }}));
+const id = 1;
+// barkeep.listen();
+barkeep.ask(GET({ path: '/user', body: { id } })).then(console.log);
 // barkeep.ask(GET({ body: { id }}));
 //barkeep.listen();
 // barkeep.ask(barkeep.extensions.msg('PARSE_REQUEST', { req: { path: '/user', body: { id }, method: 'GET' } }));

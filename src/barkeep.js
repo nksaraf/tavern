@@ -35,7 +35,7 @@ const TavernError = createCustomError('TavernError');
 const match = (message, pattern) => {
   if (typeof message === 'string') {
     return multimatch(message, pattern).length > 0;
-  } else if (typeof message === 'object' && 'type' in message) {
+  } else if (message.type !== undefined) {
     return match(message.type, pattern);
   }
   return false;
@@ -85,22 +85,17 @@ const isError = (message) => match(message, '*ERROR');
  * @return {Message}
  */
 const makeMessage = (message, payload = {}, ctx = {}) => {
-  if (message === null) {
+  if (message === null || message === undefined) {
     return undefined;
-  } else if (
-    typeof message === 'object'
-    && message.type !== undefined
-    && typeof message.type === 'string'
-  ) {
-    return {
-      type: message.type,
-      payload: message.payload || payload,
-      ctx: (message.ctx || ctx),
-    };
   } else if (typeof message === 'string') {
     return { type: message, payload, ctx };
+  } else if (typeof message.type === 'string') {
+    return {
+      type: message.type,
+      payload: Object.assign({}, payload, message.payload),
+      ctx: Object.assign({}, ctx, message.ctx),
+    };
   }
-
   return undefined;
 };
 
@@ -115,22 +110,25 @@ const makeError = (error, status = 400, ctx = {}) => {
   let errorName;
   let errorMessage;
   let errorStatus;
+  let errorCtx;
 
   if (typeof error === 'string') {
     errorName = 'ERROR';
     errorMessage = error;
     errorStatus = status;
+    errorCtx = ctx;
   } else {
     const { name, message } = error;
     errorName = name;
     errorMessage = message;
     errorStatus = error.status || status;
+    errorCtx = Object.assign({}, ctx, error.ctx);
   }
 
   return {
     type: _.snakeCase(errorName).toUpperCase(),
     payload: { error: errorMessage, status: errorStatus },
-    ctx,
+    ctx: errorCtx,
   };
 };
 
@@ -144,14 +142,6 @@ const makeError = (error, status = 400, ctx = {}) => {
 const matchPatterns = (value, matchers) => (
   Object.keys(matchers).filter((pattern) => match(value, matchers[pattern]))
 );
-
-/**
- * True if @code{object} is a function or a constructor
- * @private
- * @param  {any} object
- * @return {boolean}
- */
-const isFunction = (object) => !!(object && object.constructor && object.call && object.apply);
 
 const addApi = (func, barkeep, options = { setThisToBarkeep: false }) => (
   async (payload, ctx, type) => {
@@ -210,7 +200,7 @@ export default class Barkeep {
       return this;
     }
 
-    if (!isFunction(handler)) {
+    if (!(_.isFunction(handler))) {
       this.throw(new TavernError('Handler is not a function'));
       return this;
     }
@@ -243,9 +233,8 @@ export default class Barkeep {
       for (let i = 0; i < service.length; i += 1) {
         this.register(service[i]);
       }
-    } else if (isFunction(service)) {
-      const Service = service;
-      this.register(new Service());
+    } else if (_.isFunction(service)) {
+      this.register(new service());
     } else if (_.isPlainObject(service)) {
       for (const pattern of Object.keys(service)) {
         this.use(pattern, service[pattern], { log: false });
@@ -269,6 +258,13 @@ export default class Barkeep {
     return this;
   }
 
+  async _askRemainingHandlers(request, handlers, index) {
+    for (let i = index; i < handlers.length; i += 1) {
+      handlers[i](request.payload, request.ctx, request.type, this._extensions)
+        .then((response) => this.tell(response, null, request.ctx));
+    }
+  }
+
   /**
    * Ask for a response to given message from available services
    * @param  {Message|string} message Type of the message or the whole {@link Message}
@@ -283,35 +279,38 @@ export default class Barkeep {
     }
 
     const matchedPatterns = matchPatterns(request.type, this._matchers);
-    const responses = [];
-    for (let i = 0; i < matchedPatterns.length; i += 1) {
-      const pattern = matchedPatterns[i];
-      // looping through services that subscribe
-      for (let j = 0; j < this._listeners[pattern].length; j += 1) {
-        const handler = this._listeners[pattern][j];
-        let response;
-        try {
-          response = this.msg(await handler(
-            request.payload, request.ctx, request.type, this._extensions,
-          ));
-        } catch (error) {
-          response = this.error(error);
+    let finalResponse;
+
+    const handlers = _.flatMap(Object.values(_.pick(this._listeners, matchedPatterns)));
+    let i;
+    for (i = 0; i < handlers.length; i += 1) {
+      const handler = handlers[i];
+      let response;
+      try {
+        response = this.msg(await handler(
+          request.payload, request.ctx, request.type, this._extensions,
+        ), null, request.ctx);
+      } catch (error) {
+        response = this.error(error, null, request.ctx);
+      }
+      if (response !== null && response !== undefined) {
+        // add way to identify proper response
+        finalResponse = response;
+        if (!finalResponse.ctx.private) {
+          this.tell(finalResponse);
         }
-        if (response !== null && response !== undefined) {
-          if (!request.ctx.private && !response.ctx.private) {
-            this.tell(response);
-          }
-          response.ctx.request = request.type;
-          responses.push(response);
-        }
+        break;
       }
     }
 
-    if (responses.length === 0) {
-      return this.throw(new TavernError('No reply'), 404, ctx);
+    this._askRemainingHandlers(request, handlers, i + 1);
+
+    if (finalResponse === undefined) {
+      return this.throw(new TavernError('No reply'), 404, request.ctx);
     }
 
-    return findResponseToMessage(responses, request);
+    finalResponse.ctx.request = request.type;
+    return finalResponse;
   }
 
 
