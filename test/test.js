@@ -18,7 +18,7 @@ barkeep.use('GET:USER', function({ id }) {
 barkeep.use('GET:USER', function({ id }) {
   const numId = Number(id);
   if (numId === 1) {
-    return this.msg('USER', { name: 'Klay Curry' });
+    return this.msg('USER', { name: 'Klay Thompson' });
   } else {
     return this.error(new UserError(`${id} is hella wrong`));
   }
@@ -47,7 +47,7 @@ export const POST = (req) => {
 
 const id = 1;
 // barkeep.listen();
-barkeep.ask(GET({ path: '/user', body: { id } })).then(console.log);
+barkeep.ask(GET({ path: '/user', body: { id } }));
 // barkeep.ask(GET({ body: { id }}));
 //barkeep.listen();
 // barkeep.ask(barkeep.extensions.msg('PARSE_REQUEST', { req: { path: '/user', body: { id }, method: 'GET' } }));
