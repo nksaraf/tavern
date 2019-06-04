@@ -9,12 +9,9 @@ import Barkeep from './barkeep';
  * @module tavern
  * @return {Barkeep} barkeep
  */
-const tavern = () => {
-	return new Barkeep();
-}
+const tavern = () => new Barkeep();
 
 export default tavern;
-
 export { default as Barkeep } from './barkeep';
 export * from './services';
 export * from './utils';

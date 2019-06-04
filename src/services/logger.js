@@ -1,76 +1,59 @@
 import colors from 'colors';
-
-/*  Function to test if an object is a plain object, i.e. is constructed
-**  by the built-in Object constructor and inherits directly from Object.prototype
-**  or null. Some built-in objects pass the test, e.g. Math which is a plain object
-**  and some host or exotic objects may pass also.
-**
-**  @param {} obj - value to test
-**  @returns {Boolean} true if passes tests, false otherwise
-*/
-const isPlainObject = (obj) => {
-  // Basic check for Type object that's not null
-  if (typeof obj == 'object' && obj !== null) {
-
-    // If Object.getPrototypeOf supported, use it
-    if (typeof Object.getPrototypeOf == 'function') {
-      var proto = Object.getPrototypeOf(obj);
-      return proto === Object.prototype || proto === null;
-    }
-    
-    // Otherwise, use internal class
-    // This should be reliable as if getPrototypeOf not supported, is pre-ES5
-    return Object.prototype.toString.call(obj) == '[object Object]';
-  }
-  
-  // Not an object
-  return false;
-}
+import _ from 'lodash';
 
 export default class Logger {
-	getRepr = (value) => {
-		if (value === undefined || value === null) return '?';
-		if (Array.isArray(value)) return `[${'.'.repeat(value.length)}]`;
-		// if (isPlainObject(value)) return `{ ${'.'.repeat(Object.keys(value).length)} }`;
-		if (isPlainObject(value)) return `{ ${Object.keys(value).join(' ')} }`;
-		else return value;
-	}
+  constructor(log = console.log) {
+    this.log = log;
+  }
 
-	logError = ({ status, error }, ctx, type) => {
-		let message = (type === 'ERROR') ? `${status}: ${error}`: `${error}`;
-		console.log('🍷', type.underline.red, message.red );
-	}
+  getRepr = (value) => {
+    if (value === undefined || value === null) return '?';
+    if (Array.isArray(value)) return `[${'.'.repeat(value.length)}]`;
+    // if (isPlainObject(value)) return `{ ${'.'.repeat(Object.keys(value).length)} }`;
+    if (_.isPlainObject(value)) return `{ ${Object.keys(value).join(' ')} }`;
+    else return value;
+  }
 
-	logSubscription = ({ patterns, name }, ctx, type) => {
-		const formattedName = name ? `<${name}>`.magenta : '';
-		console.log(
-			'🍾', 
-			type.underline.blue,
-			patterns.map(pattern => pattern.toUpperCase()).join(', ').green, 
-			formattedName
-		);
-	}
+  logError = ({ status, error }, ctx, type) => {
+    const message = (type === 'ERROR') ? `${status}: ${error}` : `${error}`;
+    this.log('🍷', type.underline.red, message.red);
+  }
 
-	logMessage = (payload, ctx, type) => {
-		const payloadRepr = Object.keys(payload)
-			.map((key) => `${key}:`.blue + ` ${this.getRepr(payload[key])}`.magenta)
-			.join(', ');
+  logSubscription = ({ patterns, name }, ctx, type) => {
+    const formattedName = name ? `<${name}>`.magenta : '';
+    this.log(
+      '🍾',
+      type.underline.blue,
+      patterns.map((pattern) => pattern.toUpperCase()).join(', ').green,
+      formattedName
+    );
+  }
 
-		console.log('🍻', type.underline.green, (Object.keys(payload).length > 0) ? payloadRepr : '');
-	}
+  logMessage = (payload, ctx, type) => {
+    const payloadRepr = Object.keys(payload)
+      .map((key) => `${key}:`.blue + ` ${this.getRepr(payload[key])}`.magenta)
+      .join(', ');
 
-	logResponse = (payload, ctx, type) => {
-		if (this.isError(payload.type)) {
-			console.log('🍷', type.underline.red, payload.type.red);
-		} else {
-			console.log('🍸', type.underline.green, payload.type.blue);
-		}
-	}
+    this.log('🍻', type.underline.green, (Object.keys(payload).length > 0) ? payloadRepr : '');
+  }
 
-	subscriptions = {
-		'*ERROR': this.logError,
-		'SUBSCRIBED': this.logSubscription,
-		'*|!*ERROR|!SUBSCRIBED|!RESPONSE': this.logMessage,
-		'RESPONSE': this.logResponse
-	}
+  logResponse = (payload, ctx, type) => {
+    if (this.isError(payload.type)) {
+      this.log('🍷', type.underline.red, payload.type.red);
+    } else {
+      this.log('🍸', type.underline.green, payload.type.blue);
+    }
+  }
+
+  logLog = ({ message }) => {
+    this.log('🍻', message.blue);
+  }
+
+  subscriptions = {
+    '*ERROR': this.logError,
+    SUBSCRIBED: this.logSubscription,
+    '*|!*ERROR|!SUBSCRIBED|!RESPONSE|!LOG': this.logMessage,
+    RESPONSE: this.logResponse,
+    LOG: this.logLog
+  }
 }

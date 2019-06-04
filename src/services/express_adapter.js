@@ -19,19 +19,25 @@ export default class ExpressAdapter {
       body: req.body,
       query: req.query,
       headers: req.headers
-    }
+    };
     const { type, payload, ctx } = await this.barkeep.ask({
       type: 'HANDLE_REQUEST',
       payload: { req: reqPayload }
     });
 
-    if (!this.isType(type, 'RESPONSE')) {
-
+    let response;
+    if (!this.match(type, 'RESPONSE')) {
+      response = payload;
+    } else {
+      response = { type, payload, ctx };
     }
 
-    const response = payload;
     const status = response.payload.status || (this.isError(response.type) ? 400 : 200);
-    res.status(status).json({ ...response.payload, action: response.ctx.request, type: response.type });
+    res.status(status).json({
+      ...response.payload,
+      action: response.ctx.request,
+      type: response.type
+    });
     next();
   }
 
@@ -40,13 +46,13 @@ export default class ExpressAdapter {
       this.app.use(this.middleware);
       const server = http.createServer(this.app);
       await server.listen(process.env.PORT || 5000);
-      console.log(`🚀 Serving at http://:::${process.env.PORT}/`);
+      this.barkeep.tell('LOG', { message: `🚀 Serving at http://:::${process.env.PORT || 5000}/` });
     } catch (error) {
       this.barkeep.tell(this.error(error.message));
     }
   }
 
   subscriptions = {
-    'LISTEN': this.listen
+    LISTEN: this.listen
   }
 }
