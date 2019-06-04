@@ -10,23 +10,6 @@ import { createCustomError } from './utils';
 const TavernError = createCustomError('TavernError');
 
 /**
- * @typedef   {Object} Message
- *
- * @property  {string} type - Description of message, matched against listener patterns
- * @property  {Object} payload - Additional information important to the message
- * @property  {Object} context - Metadata related to the message and its passage
- */
-
-/**
- * @typedef {function} Handler
- *
- * @param   {Object}  [payload]
- * @param   {Object}  [context]
- * @param   {string}  [type]
- * @return  {Message|string|undefined} response
- */
-
-/**
  * True, if value matches the given pattern(s), uses multimatch package
  * @param  {string} value
  * @param  {string|string[]} pattern
@@ -40,11 +23,6 @@ const match = (message, pattern) => {
   }
   return false;
 };
-
-/**
- * @typedef {interface} Service
- * @property {Object.<string,Handler>} subscriptions
- */
 
 /**
  * Resolve which of the @code{response} to reply to the service which
@@ -67,13 +45,6 @@ const findResponseToMessage = (responses, message) => {
   // no other way to finding out best response
   return responses[0];
 };
-
-/**
- * Checks if the @code{message} is an error message
- * @param  {Message}    message
- * @return {boolean}
- */
-const isError = (message) => match(message, '*ERROR');
 
 /**
  * Makes a structured @code{Message} from give input. If @code{message} is a string,
@@ -156,33 +127,38 @@ const addApi = (func, barkeep, options = { setThisToBarkeep: false }) => (
  * @property  {function(Service)}  register
  */
 export default class Barkeep {
-  constructor() {
-    this._listeners = {};
-    this._matchers = {};
+  #listeners = {}
 
+  #matchers = {}
+
+  #api = {}
+
+  #extensions = {}
+
+  constructor() {
     this.ask = this.ask.bind(this);
     this.tell = this.tell.bind(this);
     this.listen = this.listen.bind(this);
     this.throw = this.throw.bind(this);
     this.error = makeError;
-    this.isError = isError;
+    this.isError = (message) => match(message, '*ERROR');
     this.match = match;
     this.msg = makeMessage;
 
-    this._api = {
+    this.#api = {
       ask: this.ask,
       tell: this.tell,
       listen: this.listen,
       throw: this.throw,
-    };
-
-    this._extensions = {
-      ...this._api,
-      barkeep: this._api,
       error: this.error,
       isError: this.isError,
       match: this.match,
       msg: this.msg,
+    };
+
+    this.#extensions = {
+      ...this.#api,
+      barkeep: this.#api
     };
   }
 
@@ -205,14 +181,14 @@ export default class Barkeep {
       return this;
     }
 
-    const wrappedHandler = addApi(handler, this._extensions, options);
+    const wrappedHandler = addApi(handler, this.#extensions, options);
     const upperCasePattern = pattern.toUpperCase();
 
-    if (!(pattern in this._listeners)) {
-      this._listeners[upperCasePattern] = [];
-      this._matchers[upperCasePattern] = upperCasePattern.split('|').map((part) => _.trim(part, ' '));
+    if (!(pattern in this.#listeners)) {
+      this.#listeners[upperCasePattern] = [];
+      this.#matchers[upperCasePattern] = upperCasePattern.split('|').map((part) => _.trim(part, ' '));
     }
-    this._listeners[upperCasePattern].push(wrappedHandler);
+    this.#listeners[upperCasePattern].push(wrappedHandler);
 
     if (options.log) {
       this.tell('SUBSCRIBED', { patterns: [upperCasePattern] });
@@ -234,7 +210,8 @@ export default class Barkeep {
         this.register(service[i]);
       }
     } else if (_.isFunction(service)) {
-      this.register(new service());
+      const Service = service;
+      this.register(new Service());
     } else if (_.isPlainObject(service)) {
       for (const pattern of Object.keys(service)) {
         this.use(pattern, service[pattern], { log: false });
@@ -246,7 +223,7 @@ export default class Barkeep {
         return this;
       }
 
-      mixin(service, this._extensions, false);
+      mixin(service, this.#extensions, false);
       for (const pattern of Object.keys(service.subscriptions)) {
         this.use(pattern, service.subscriptions[pattern], { addApi: false, log: false });
       }
@@ -260,7 +237,7 @@ export default class Barkeep {
 
   async _askRemainingHandlers(request, handlers, index) {
     for (let i = index; i < handlers.length; i += 1) {
-      handlers[i](request.payload, request.ctx, request.type, this._extensions)
+      handlers[i](request.payload, request.ctx, request.type, this.#extensions)
         .then((response) => this.tell(response, null, request.ctx));
     }
   }
@@ -278,17 +255,17 @@ export default class Barkeep {
       return this.throw(new TavernError('Invalid message to ask'));
     }
 
-    const matchedPatterns = matchPatterns(request.type, this._matchers);
+    const matchedPatterns = matchPatterns(request.type, this.#matchers);
     let finalResponse;
 
-    const handlers = _.flatMap(Object.values(_.pick(this._listeners, matchedPatterns)));
+    const handlers = _.flatMap(Object.values(_.pick(this.#listeners, matchedPatterns)));
     let i;
     for (i = 0; i < handlers.length; i += 1) {
       const handler = handlers[i];
       let response;
       try {
         response = this.msg(await handler(
-          request.payload, request.ctx, request.type, this._extensions,
+          request.payload, request.ctx, request.type, this.#extensions,
         ), null, request.ctx);
       } catch (error) {
         response = this.error(error, null, request.ctx);
@@ -315,13 +292,13 @@ export default class Barkeep {
 
 
   async _asyncTell(message) {
-    const matchedPatterns = matchPatterns(message.type, this._matchers);
+    const matchedPatterns = matchPatterns(message.type, this.#matchers);
     for (let i = 0; i < matchedPatterns.length; i += 1) {
       const pattern = matchedPatterns[i];
-      for (let j = 0; j < this._listeners[pattern].length; j += 1) {
-        const handler = this._listeners[pattern][j];
+      for (let j = 0; j < this.#listeners[pattern].length; j += 1) {
+        const handler = this.#listeners[pattern][j];
         const { type, payload, ctx } = message;
-        handler(payload, ctx, type, this._extensions);
+        handler(payload, ctx, type, this.#extensions);
       }
     }
   }

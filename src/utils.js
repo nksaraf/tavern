@@ -1,10 +1,4 @@
 /**
- * @typedef {Error} CustomError
- * @param {string} message
- * @param {number} status
- */
-
-/**
  * Create an Error class with the given name, can be used to
  * get better logging messages.
  * @param  {string} name Name of error
@@ -34,5 +28,4 @@ const createCustomError = (name) => {
   return CustomError;
 };
 
-export default createCustomError;
 export { createCustomError };
