@@ -45,7 +45,7 @@ export const POST = (req) => {
   return getRequest(req);
 }
 
-const id = 1;
+const id = 2;
 // barkeep.listen();
 barkeep.ask(GET({ path: '/user', body: { id } }));
 // barkeep.ask(GET({ body: { id }}));

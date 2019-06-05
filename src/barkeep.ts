@@ -1,3 +1,5 @@
+// @ts-check
+
 /**
  * @module tavern
  */
@@ -6,16 +8,32 @@ import mixin from 'merge-descriptors';
 import multimatch from 'multimatch';
 import _ from 'lodash';
 import { createCustomError } from './utils';
+import { 
+  Message, 
+  CustomError, 
+  Matchers, 
+  Registrar, 
+  Messenger,
+  Handler,
+  MessengerHelpers,
+  MessengerApi,
+  Listeners,
+  Service,
+  ServiceConstructor,
+  ServiceObject,
+  ServiceGenerator,
+  ServiceSubscriptions
+} from './types';
 
 const TavernError = createCustomError('TavernError');
 
 /**
  * True, if value matches the given pattern(s), uses multimatch package
- * @param  {string} message
- * @param  {string|string[]} pattern
- * @return {boolean}
+ * @param  message
+ * @param  pattern
+ * @return
  */
-const match = (message, pattern) => {
+const match = (message: string | Message, pattern: string | string[]): boolean => {
   if (typeof message === 'string') {
     return multimatch(message, pattern).length > 0;
   } else if (message.type !== undefined) {
@@ -24,39 +42,43 @@ const match = (message, pattern) => {
   return false;
 };
 
-/**
- * Resolve which of the @code{response} to reply to the service which
- * sent this @code{message}
- * @private
- * @param  {Message[]}  responses
- * @param  {Message}    message
- * @return {Message}
- */
-const findResponseToMessage = (responses, message) => {
-  if (responses.length === 1) {
-    return responses[0];
-  }
-  for (let i = 0; i < responses.length; i += 1) {
-    const response = responses[i];
-    if (response.request === message.replyTo) {
-      return response;
-    }
-  }
-  // no other way to finding out best response
-  return responses[0];
-};
+// /**
+//  * Resolve which of the @code{response} to reply to the service which
+//  * sent this @code{message}
+//  * @private
+//  * @param  {Message[]}  responses
+//  * @param  {Message}    message
+//  * @return {Message}
+//  */
+// const findResponseToMessage = (responses: Message[], message: Message) => {
+//   if (responses.length === 1) {
+//     return responses[0];
+//   }
+//   for (let i = 0; i < responses.length; i += 1) {
+//     const response = responses[i];
+//     if (response.request === message.replyTo) {
+//       return response;
+//     }
+//   }
+//   // no other way to finding out best response
+//   return responses[0];
+// };
 
 /**
  * Makes a structured @code{Message} from give input. If @code{message} is a string,
  * the payload and context will added to make a message. If it is already a message, it's
  * context will be collected, and structured cleaned.
- * @param  {Message|string} message
- * @param  {Object}     [payload={}]
- * @param  {Object}     [ctx={}]
- * @return {Message}
+ * @param  message
+ * @param  [payload={}]
+ * @param  [ctx={}]
+ * @return Message if one could could be created, else undefined
  */
-const makeMessage = (message, payload = {}, ctx = {}) => {
-  if (message === null || message === undefined) {
+const makeMessage = (
+    message: Message | string | undefined, 
+    payload: object = {}, 
+    ctx: object = {}
+  ): Message | undefined => {
+  if (message === undefined) {
     return undefined;
   } else if (typeof message === 'string') {
     return { type: message, payload, ctx };
@@ -72,12 +94,16 @@ const makeMessage = (message, payload = {}, ctx = {}) => {
 
 /**
  * Make an error message
- * @param  {string|Error} error
- * @param  {Number} [status=400]
- * @param  {Object} [ctx={}]
- * @return {Message}
+ * @param  error
+ * @param  [status=400]
+ * @param  [ctx={}]
+ * @return Error message
  */
-const makeError = (error, status = 400, ctx = {}) => {
+const makeError = <T extends string>(
+    error: Error | string | CustomError<T>, 
+    status = 400, 
+    ctx = {}
+  ): Message => {
   let errorName;
   let errorMessage;
   let errorStatus;
@@ -92,8 +118,8 @@ const makeError = (error, status = 400, ctx = {}) => {
     const { name, message } = error;
     errorName = name;
     errorMessage = message;
-    errorStatus = error.status || status;
-    errorCtx = Object.assign({}, ctx, error.ctx);
+    errorStatus = (error as CustomError<T>).status || status;
+    errorCtx = Object.assign({}, ctx, (error as CustomError<T>).ctx);
   }
 
   return {
@@ -103,23 +129,158 @@ const makeError = (error, status = 400, ctx = {}) => {
   };
 };
 
+
 /**
  * List of patterns from @code{matchers} that match the given @code{value}
- * @private
- * @param  {string} value
- * @param  {Object.<string, Gex>} matchers
- * @return {string[]} matchedPatterns
+ *
+ * @param  value
+ * @param  matchers
+ * @return matchedPatterns
  */
-const matchPatterns = (value, matchers) => (
+const matchPatterns = (value: string, matchers: Matchers): string[] => (
   Object.keys(matchers).filter((pattern) => match(value, matchers[pattern]))
 );
 
-const addApi = (func, barkeep, options = { setThisToBarkeep: false }) => (
-  async (payload, ctx, type) => {
-    const that = options.setThisToBarkeep ? barkeep : null;
+
+const addApi = (func: Handler, barkeep: Messenger, options: any) => {
+  const defaultOptions = {
+    setThisToBarkeep: false
+  };
+
+  options = _.defaults(options || {}, defaultOptions);
+
+  return async (payload: object, ctx: object, type: string) => {
+    const that = options.setThisToBarkeep ? barkeep : undefined;
     return func.call(that, payload, ctx, type, barkeep);
   }
-);
+};
+
+const isConstructor = (object: any): boolean => {
+  try {
+    new object();
+  } catch (err) {
+    if (err.message.indexOf('is not a constructor') >= 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+const nullApi = {
+  ask: undefined,
+  tell: undefined,
+  throw: undefined,
+  listen: undefined,
+  msg: undefined,
+  isError: undefined,
+  match: undefined,
+  error: undefined
+}
+
+abstract class ABarkeep implements Registrar, Messenger {
+  error = makeError;
+  msg = makeMessage;
+  isError = (message: Message) => match(message, '*ERROR');
+  match = match;
+
+  private methods: MessengerHelpers & MessengerApi;
+  private api: Messenger;
+
+  private listeners: Listeners;
+  private matchers: Matchers;
+
+  constructor() {
+    this.methods = Object.assign({}, nullApi);
+    this.api = {
+      ...this.methods,
+      barkeep: this.methods
+    }
+    this.listeners = {};
+    this.matchers = {};
+  }
+
+  /**
+   * Add the given {@link handler} to the list of listeners corresponding to the given
+   * pattern
+   * @param   pattern
+   * @param   handler
+   * @param   [options={}]
+   * @return this
+   */
+  use(pattern: string, handler: Handler, options: any) : Registrar {
+    const defaultOptions = {
+      log: true, 
+      setThisToBarkeep: true
+    }
+
+    options = _.defaults(options || {}, defaultOptions);
+
+    if (!(typeof pattern === 'string')) {
+      this.throw(new TavernError('Subscription pattern must be a string'));
+      return this;
+    }
+
+    if (!(_.isFunction(handler))) {
+      this.throw(new TavernError('Handler is not a function'));
+      return this;
+    }
+
+    const wrappedHandler = addApi(handler, this.api, options);
+    const upperCasePattern = pattern.toUpperCase();
+
+    if (!(pattern in this.listeners)) {
+      this.listeners[upperCasePattern] = [];
+      this.matchers[upperCasePattern] = upperCasePattern.split('|').map((part) => _.trim(part, ' '));
+    }
+    this.listeners[upperCasePattern].push(wrappedHandler);
+
+    if (options.log) {
+      this.tell('SUBSCRIBED', { patterns: [upperCasePattern] });
+    }
+    return this;
+  }
+
+  /**
+   * Register the service with the Barkeep. This involves adding listeners for
+   * all the patterns that the service subscribes too. It can register a list of services too,
+   * and when given functions or constructors, calls them before registering the service.
+   *
+   * @param  {Object} service
+   * @return {Barkeep} this
+   */
+  register(service: Service[] | Service) {
+    if (Array.isArray(service)) {
+      for (let i = 0; i < service.length; i += 1) {
+        this.register(service[i]);
+      }
+    } else if (isConstructor(service)) {
+      const Service: ServiceConstructor = (service as ServiceConstructor);
+      this.register(new Service());
+    } else if (_.isFunction(service)) {
+      this.register(service());
+    } else if (_.isPlainObject(service)) {
+      for (const pattern of Object.keys(service)) {
+        this.use(pattern, (service as ServiceObject)[pattern], { log: false });
+      }
+      this.tell('SUBSCRIBED', { patterns: Object.keys(service) });
+    } else {
+      if (!('subscriptions' in service)) {
+        this.throw(new TavernError('Invalid service'));
+        return this;
+      }
+
+      mixin(service, this.api, false);
+      for (const pattern of Object.keys(service.subscriptions)) {
+        this.use(pattern, (service as ServiceSubscriptions).subscriptions[pattern], { addApi: false, log: false });
+      }
+
+      const name = service.constructor ? service.constructor.name : null;
+      this.tell('SUBSCRIBED', { patterns: Object.keys(service.subscriptions), name });
+    }
+
+    return this;
+  }
+}
 
 /**
  * The Barkeep
@@ -128,8 +289,8 @@ const addApi = (func, barkeep, options = { setThisToBarkeep: false }) => (
  */
 export default class Barkeep {
   constructor() {
-    this._listeners = {};
-    this._matchers = {};
+    this.listeners = {};
+    this.matchers = {};
 
     this.ask = this.ask.bind(this);
     this.tell = this.tell.bind(this);
@@ -179,11 +340,11 @@ export default class Barkeep {
     const wrappedHandler = addApi(handler, this._extensions, options);
     const upperCasePattern = pattern.toUpperCase();
 
-    if (!(pattern in this._listeners)) {
-      this._listeners[upperCasePattern] = [];
-      this._matchers[upperCasePattern] = upperCasePattern.split('|').map((part) => _.trim(part, ' '));
+    if (!(pattern in this.listeners)) {
+      this.listeners[upperCasePattern] = [];
+      this.matchers[upperCasePattern] = upperCasePattern.split('|').map((part) => _.trim(part, ' '));
     }
-    this._listeners[upperCasePattern].push(wrappedHandler);
+    this.listeners[upperCasePattern].push(wrappedHandler);
 
     if (options.log) {
       this.tell('SUBSCRIBED', { patterns: [upperCasePattern] });
@@ -250,10 +411,10 @@ export default class Barkeep {
       return this.throw(new TavernError('Invalid message to ask'));
     }
 
-    const matchedPatterns = matchPatterns(request.type, this._matchers);
+    const matchedPatterns = matchPatterns(request.type, this.matchers);
     let finalResponse;
 
-    const handlers = _.flatMap(Object.values(_.pick(this._listeners, matchedPatterns)));
+    const handlers = _.flatMap(Object.values(_.pick(this.listeners, matchedPatterns)));
     let i;
     for (i = 0; i < handlers.length; i += 1) {
       const handler = handlers[i];
@@ -287,11 +448,11 @@ export default class Barkeep {
 
 
   async _asyncTell(message) {
-    const matchedPatterns = matchPatterns(message.type, this._matchers);
+    const matchedPatterns = matchPatterns(message.type, this.matchers);
     for (let i = 0; i < matchedPatterns.length; i += 1) {
       const pattern = matchedPatterns[i];
-      for (let j = 0; j < this._listeners[pattern].length; j += 1) {
-        const handler = this._listeners[pattern][j];
+      for (let j = 0; j < this.listeners[pattern].length; j += 1) {
+        const handler = this.listeners[pattern][j];
         const { type, payload, ctx } = message;
         handler(payload, ctx, type, this._extensions);
       }
@@ -317,8 +478,10 @@ export default class Barkeep {
     }
   }
 
-  throw(...args) {
-    return this.tell(this.error(...args));
+  throw<T extends string>(error: Error | string | CustomError<T>, status?: number, ctx?: object) {
+    return this.tell(
+      this.error(error, status, ctx)
+    );
   }
 
   /**
