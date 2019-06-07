@@ -8,10 +8,11 @@ module.exports = function (api) {
           "node": "current"
         }
       }
-    ]
+    ], "@babel/preset-typescript"
   ];
   const plugins = [
-    "@babel/plugin-proposal-class-properties"
+    "@babel/plugin-proposal-class-properties",
+    "@babel/plugin-proposal-object-rest-spread"
   ]
 
   return {
