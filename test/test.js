@@ -1,26 +1,19 @@
-import tavern, { RequestHandler, ExpressAdapter, Logger, Parser, createCustomError } from '../src';
-// import test from 'ava';
 
+
+import tavern, { RequestHandler, ExpressAdapter, Logger, Parser, createCustomError } from '../src/tavern';
+// // import test from 'ava';
+//
+//
 const UserError = createCustomError('UserError');
 const barkeep = tavern();
-barkeep.register([Logger, RequestHandler, ExpressAdapter, Parser]);
-// barkeep.register(Logger);
+barkeep.register(Logger, RequestHandler, ExpressAdapter, Parser);
 
-barkeep.use('GET:USER', function({ id }) {
-  const numId = Number(id);
-	if (numId === 1) {
-		return this.msg('USER', { name: 'Stephen Curry' });
-	} else {
-		return this.error(new UserError(`${id} is hella wrong`));
-	}
-});
-
-barkeep.use('GET:USER', function({ id }) {
+barkeep.use('GET:USER', ({ id }, c, t, api) => {
   const numId = Number(id);
   if (numId === 1) {
-    return this.msg('USER', { name: 'Klay Thompson' });
+    return api.msg('USER', { name: 'Klay Thompson' });
   } else {
-    return this.error(new UserError(`${id} is hella wrong`));
+    return api.error(new UserError(`${id} is hella wrong`));
   }
 });
 
@@ -47,7 +40,10 @@ export const POST = (req) => {
 
 const id = 2;
 // barkeep.listen();
-barkeep.ask(GET({ path: '/user', body: { id } }));
-// barkeep.ask(GET({ body: { id }}));
-//barkeep.listen();
-// barkeep.ask(barkeep.extensions.msg('PARSE_REQUEST', { req: { path: '/user', body: { id }, method: 'GET' } }));
+(async () => {
+  await barkeep.ask(GET({ path: '/user', body: { id } }));
+  await barkeep.ask(GET({ body: { id }, path: '/user/' }));
+})();
+// barkeep.listen();
+// barkeep.ask(barkeep.msg('PARSE_REQUEST', { req: { path: '/user', body:
+//  { id }, method: 'GET' } }));

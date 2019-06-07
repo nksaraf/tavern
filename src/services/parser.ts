@@ -1,10 +1,21 @@
 import _ from 'lodash';
-import { createCustomError } from '../utils';
+import { createCustomError } from '../tavern';
 
 const ParserError = createCustomError('ParserError');
 
+interface ParserPayload {
+  req: TRequest;
+}
+
+interface TRequest {
+  path: string;
+  method: string;
+  body: object;
+  query: object;
+}
+
 export default class Parser {
-  parseRequest = ({ req }) => {
+  parseRequest = ({ req }: ParserPayload) => {
     const {
       path,
       method,
