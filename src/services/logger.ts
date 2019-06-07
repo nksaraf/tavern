@@ -24,13 +24,20 @@ export default class Logger extends BaseService {
   }
 
   logSubscription({ patterns, name }: LogSubscriptionPayload, ctx: object, type: string) {
-    const formattedName = name ? chalk.magenta(`<${name}>`) : '';
-    this.log(
-      '🍾',
-      chalk.underline.blue(type),
-      formattedName,
-      patterns.map((pattern: string) => chalk.green(pattern.toUpperCase())).join(', ')
-    );
+    if (name) {
+      this.log(
+        '🍾',
+        chalk.underline.blue(type),
+        chalk.magenta(`<${name}>`),
+        patterns.map((pattern: string) => chalk.green(pattern.toUpperCase())).join(', ')
+      );
+    } else {
+      this.log(
+        '🍾',
+        chalk.underline.blue(type),
+        patterns.map((pattern: string) => chalk.green(pattern.toUpperCase())).join(', ')
+      );
+    }
   }
 
   logMessage(payload: LogMessagePayload, ctx: object, type: string) {

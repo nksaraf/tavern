@@ -49,7 +49,7 @@ export default class LocalBarkeep extends AbstractBarkeep {
       try {
         response = this.msg(await handler(
           request.payload, request.ctx, request.type, this.methods,
-        ), ctx=request.ctx);
+        ), undefined, request.ctx);
       } catch (error) {
         response = this.error(error, undefined, ctx=request.ctx);
       }

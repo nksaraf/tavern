@@ -17,6 +17,15 @@ barkeep.use('GET:USER', ({ id }, c, t, api) => {
   }
 });
 
+barkeep.use('GET:USER', ({ id }, c, t, api) => {
+  const numId = Number(id);
+  if (numId === 1) {
+    return api.msg('USER', { name: 'Stephen Curry' });
+  } else {
+    return api.error(new UserError(`${id} is hella wrong`));
+  }
+});
+
 console.log();
 
 const getRequest = (req) => {
@@ -38,7 +47,7 @@ export const POST = (req) => {
   return getRequest(req);
 }
 
-const id = 2;
+const id = 1;
 // barkeep.listen();
 (async () => {
   await barkeep.ask(GET({ path: '/user', body: { id } }));
