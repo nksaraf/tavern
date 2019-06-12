@@ -2,7 +2,7 @@ import http from 'http';
 import morgan from 'morgan';
 import express from 'express';
 
-import { BaseService, Message, Dict } from '../tavern';
+import { BaseService, Message, Dict } from '../index';
 
 interface TRequest {
   path: string; 

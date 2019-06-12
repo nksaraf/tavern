@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import _ from 'lodash';
 
-import { BaseService, Dict, createCustomError } from '../tavern';
+import { BaseService, Dict, createCustomError } from '../index';
 
 const LoggerError = createCustomError('LoggerError');
 
@@ -31,7 +31,7 @@ export default class Logger extends BaseService {
   private logSubscription({ patterns, name }: LogSubscriptionPayload, ctx: Dict, type: string) {
     if (patterns === undefined) {
       this.logError({ status: 400, error: 'Invalid params to logger'}, {}, 'Logger Error');
-    } else if (name === undefined) {
+    } else if (name !== undefined) {
       this.log(
         '🍾',
         chalk.underline.blue(type),

@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { BaseService, Dict, createCustomError } from '../tavern';
+import { BaseService, Dict, createCustomError } from '../index';
 
 const ParserError = createCustomError('ParserError');
 

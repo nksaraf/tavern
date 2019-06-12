@@ -8,21 +8,18 @@
     "tavern/**/*"
   ],
   "scripts": {
-    
     "preinstall": "rm -rf node_modules",
     "prepare": "npm run build",
     "build": "npm run clean && npm run compile && npm run type:declare",
     "clean": "rm -rf tavern && rm -rf deps && mkdir tavern",
     "compile": "babel src --out-dir tavern --extensions .ts",
     "type:declare": "tsc --declaration --emitDeclarationOnly --outFile tavern/index",
-
     "deploy:local": "npm run clean && npm run build && npm link",
-    
     "test:script": "NODE_ENV=test && babel-node --extensions '.js,.ts' test/test.js -- ",
     "test:watch": "NODE_ENV=test nodemon --exec npm run test:script",
     "_test": "nyc ava",
     "test": "npm run test:script",
-    
+    "test:local": "npm run compile && npm run test",
     "docs": "./deps/typedoc/bin/typedoc ./src",
     "docs:clean": "rm -rf docs",
     "docs:install": "rm -rf deps && git clone https://github.com/TypeStrong/typedoc.git deps/typedoc && cd deps/typedoc && npm install . && npm run build",

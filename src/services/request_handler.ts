@@ -1,4 +1,4 @@
-import { BaseService, Message, Dict, createCustomError } from '../tavern';
+import { BaseService, Message, Dict, createCustomError } from '../index';
 import http from 'http';
 
 interface RequestHandlerPayload {
