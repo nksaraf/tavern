@@ -65,3 +65,5 @@ docs
 
 .nyc_output
 coverage
+deps
+package-lock.json
