@@ -18,7 +18,7 @@
 
     "deploy:local": "npm run clean && npm run build && npm link",
     
-    "test:script": "NODE_ENV=test && npm run build && babel-node --extensions '.js,.ts' test/test.js -- ",
+    "test:script": "NODE_ENV=test && babel-node --extensions '.js,.ts' test/test.js -- ",
     "test:watch": "NODE_ENV=test nodemon --exec npm run test:script",
     "_test": "nyc ava",
     "test": "npm run test:script",
