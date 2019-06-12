@@ -1,11 +1,24 @@
-import { BaseService, Message } from '../tavern';
+import { BaseService, Message, Dict, createCustomError } from '../tavern';
+import http from 'http';
 
 interface RequestHandlerPayload {
-  req: any
+  req?: {
+    path: string; 
+    method: string;
+    body?: object;
+    query?: object;
+    headers?: http.IncomingHttpHeaders;
+  }
 }
+
+const InvalidRequestError = createCustomError('InvalidRequestError');
 
 export default class RequestHandler extends BaseService {
   handleRequest = async ({ req }: RequestHandlerPayload) => {
+    if (req === undefined) {
+      return this.error(new InvalidRequestError());
+    }
+
     const parsedRequest = await this.barkeep.ask('PARSE_REQUEST', { req });
     if (this.isError(parsedRequest)) {
       return parsedRequest;

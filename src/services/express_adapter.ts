@@ -2,24 +2,22 @@ import http from 'http';
 import morgan from 'morgan';
 import express from 'express';
 
-import { BaseService, Message } from '../tavern';
+import { BaseService, Message, Dict } from '../tavern';
 
 interface TRequest {
   path: string; 
   method: string;
-  body: object;
-  query: object;
-  headers: http.IncomingHttpHeaders;
+  body?: object;
+  query?: object;
+  headers?: http.IncomingHttpHeaders;
 }
 
-interface TResponsePayload {
+interface TResponsePayload extends Dict {
   status: number;
-  [key: string]: any
 }
 
-interface TResponseCtx {
+interface TResponseCtx extends Dict {
   request: string;
-  [key: string]: any
 }
 
 export default class ExpressAdapter extends BaseService {
@@ -36,6 +34,7 @@ export default class ExpressAdapter extends BaseService {
   middleware = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.log();
     const tRequest: TRequest = {
+      //TODO: parse url properly (from express)
       path: req.path,
       method: req.method,
       body: req.body,
@@ -52,10 +51,10 @@ export default class ExpressAdapter extends BaseService {
       response = { type, payload, ctx };
     }
 
-    const status = (response.payload as TResponsePayload).status || (this.isError(response.type) ? 400 : 200);
+    const status = response.payload.status || (this.isError(response.type) ? 400 : 200);
     res.status(status).json({
       ...response.payload,
-      action: (response.ctx as TResponseCtx).request,
+      action: response.ctx.request,
       type: response.type
     });
     next();

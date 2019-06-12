@@ -21,7 +21,9 @@
         "no-underscore-dangle": 0,
         "no-restricted-syntax": 0,
         "comma-dangle": 0,
-        "no-unused-vars": 1
+        "no-unused-vars": 1,
+        "indent": "off",
+        "@typescript-eslint/indent": ["error", 2]
     },
     "plugins": [ "@typescript-eslint" ]
 }

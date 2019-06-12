@@ -3,17 +3,18 @@ module.exports = function (api) {
 
   const presets = [
     [
-      "@babel/preset-env", {
-        "targets": {
-          "node": "current"
+      '@babel/preset-env', {
+        targets: {
+          node: 'current'
         }
       }
-    ], "@babel/preset-typescript"
+    ], '@babel/preset-typescript'
   ];
+
   const plugins = [
-    "@babel/plugin-proposal-class-properties",
-    "@babel/plugin-proposal-object-rest-spread"
-  ]
+    '@babel/plugin-proposal-class-properties',
+    '@babel/plugin-proposal-object-rest-spread'
+  ];
 
   return {
     presets,
@@ -21,9 +22,9 @@ module.exports = function (api) {
     env: {
       test: {
         plugins: [
-          "istanbul"
+          'istanbul'
         ]
       }
     }
   };
-}
+};

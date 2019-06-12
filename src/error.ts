@@ -20,7 +20,7 @@ export interface CustomError<T extends string> extends Error {
  * @return Custom error class
  */
 export function createCustomError<T extends string>(name: T) : any {
-  function CustomError(this: Error, message: string, status = 400, ctx = {}) : CustomError<T> {
+  function CustomError(this: Error, message = name, status = 400, ctx = {}) : CustomError<T> {
     const error = new Error(message);
     const customError: CustomError<T> = Object.assign(error, { name, status, ctx });
     Object.setPrototypeOf(customError, Object.getPrototypeOf(this));
@@ -44,7 +44,7 @@ export function createCustomError<T extends string>(name: T) : any {
 export const TavernError = createCustomError('TavernError');
 
 export function makeErrorMessage<T extends string>(
-    error: Error | string | CustomError<T>, 
+    error: Error|CustomError<T>|string, 
     status = 400, 
     ctx: object = {}
   ): Message {

@@ -1,7 +1,9 @@
-import { MessengerApi, Messenger } from './barkeep';
-
 export type Message = {
   type: string
-  payload: object,
-  ctx: object
+  payload: Dict,
+  ctx: Dict
+}
+
+export type Dict = {
+  [key: string]: any
 }
