@@ -1,30 +1,37 @@
 import chalk from 'chalk';
 import _ from 'lodash';
 
-import { BaseService } from '../tavern';
+import { BaseService, Dict, createCustomError } from '../tavern';
+
+const LoggerError = createCustomError('LoggerError');
 
 export default class Logger extends BaseService {
-  log: typeof console.log
+  private log: (message?: any, ...optionalParams: any[]) => void
   
-  constructor(log = console.log) {
+  constructor(log: ((message?: any, ...optionalParams: any[]) => void) = console.log) {
     super();
     this.log = log;
   }
 
-  getRepr(value: any) : string {
+  private getRepr(value: any) : string {
     if (value === undefined || value === null) return '?';
     if (Array.isArray(value)) return `[${'.'.repeat(value.length)}]`;
     if (_.isPlainObject(value)) return `{ ${Object.keys(value).join(' ')} }`;
     else return value.toString();
   }
 
-  logError({ status, error }: LogErrorPayload, ctx: object, type: string) {
+  private logError({ status, error }: LogErrorPayload, ctx: Dict, type: string) {
+    if (status === undefined || error === undefined) {
+      this.logError({ status: 400, error: 'Invalid params to logger'}, {}, 'Logger Error');
+    }
     const message = (type === 'ERROR') ? `${status}: ${error}` : `${error}`;
     this.log('🍷', chalk.underline.red(type), chalk.red(message));
   }
 
-  logSubscription({ patterns, name }: LogSubscriptionPayload, ctx: object, type: string) {
-    if (name) {
+  private logSubscription({ patterns, name }: LogSubscriptionPayload, ctx: Dict, type: string) {
+    if (patterns === undefined) {
+      this.logError({ status: 400, error: 'Invalid params to logger'}, {}, 'Logger Error');
+    } else if (name === undefined) {
       this.log(
         '🍾',
         chalk.underline.blue(type),
@@ -40,7 +47,7 @@ export default class Logger extends BaseService {
     }
   }
 
-  logMessage(payload: LogMessagePayload, ctx: object, type: string) {
+  private logMessage(payload: Dict, ctx: Dict, type: string) {
     const payloadRepr = Object.keys(payload)
       .map((key) => chalk.blue(`${key}:`) + chalk.magenta(` ${this.getRepr(payload[key])}`))
       .join(', ');
@@ -48,16 +55,24 @@ export default class Logger extends BaseService {
     this.log('🍻', chalk.underline.green(type), (Object.keys(payload).length > 0) ? payloadRepr : '');
   }
 
-  logResponse({ type }: LogResponsePayload, ctx, msgType) {
-    if (this.isError(type)) {
+  private logResponse({ type }: LogResponsePayload, ctx: Dict, msgType: string) {
+    if (type === undefined) {
+      this.logError({ status: 400, error: 'Invalid params to logger'}, {}, 'Logger Error');
+    }
+    else if (this.isError(type)) {
       this.log('🍷', chalk.underline.red(msgType), chalk.red(type));
     } else {
       this.log('🍸', chalk.underline.green(msgType), chalk.blue(type));
     }
   }
 
-  logLog({ message }: LogLogPayload) {
-    this.log('🍻', message.blue);
+  private logLog({ message }: LogLogPayload) {
+    if (message === undefined) {
+      this.logError({ status: 400, error: 'Invalid params to logger'}, {}, 'Logger Error');
+    }
+    else {
+      this.log('🍻', chalk.blue(message));
+    }
   }
 
   subscriptions = {
@@ -69,24 +84,20 @@ export default class Logger extends BaseService {
   }
 }
 
-interface LogLogPayload {
-  message: string
+interface LogLogPayload extends Dict {
+  message?: string
 }
 
-interface LogResponsePayload {
-  type: string
+interface LogResponsePayload extends Dict {
+  type?: string
 }
 
-interface LogMessagePayload {
-  [key: string]: any
-}
-
-interface LogSubscriptionPayload {
-  patterns: string[]
+interface LogSubscriptionPayload extends Dict {
+  patterns?: string[]
   name?: string
 }
 
-interface LogErrorPayload {
-  error: string
-  status: number
+interface LogErrorPayload extends Dict {
+  error?: string
+  status?: number
 }

@@ -1,21 +1,25 @@
 import _ from 'lodash';
-import { createCustomError } from '../tavern';
+import { BaseService, Dict, createCustomError } from '../tavern';
 
 const ParserError = createCustomError('ParserError');
 
-interface ParserPayload {
-  req: TRequest;
+interface ParserPayload extends Dict {
+  req?: TRequest;
 }
 
 interface TRequest {
   path: string;
   method: string;
-  body: object;
-  query: object;
+  body?: object;
+  query?: object;
 }
 
-export default class Parser {
+export default class Parser extends BaseService {
   parseRequest = ({ req }: ParserPayload) => {
+    if (req === undefined) {
+      return this.error(new ParserError('Invalid request'));
+    }
+
     const {
       path,
       method,
@@ -23,19 +27,9 @@ export default class Parser {
       query
     } = req;
 
-    if (path === undefined || method === undefined) {
-      throw new ParserError('Request does not contain path and method');
-    }
-
     const plainUrl = _.trim(path, '/');
     const action = `${method}:${plainUrl}`.toUpperCase();
-    return {
-      type: 'PARSED_REQUEST',
-      payload: {
-        type: action,
-        payload: { ...body, ...query }
-      }
-    };
+    return this.msg('PARSED_REQUEST', this.msg(action, { ...body, ...query }));
   }
 
   subscriptions = {

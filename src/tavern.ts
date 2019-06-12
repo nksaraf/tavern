@@ -26,10 +26,11 @@ function tavern(options: TavernOptions = {}): Barkeep {
 }
 
 export default tavern;
+
 export { AbstractBarkeep } from './barkeep';
 export { BaseService } from './service';
 export { createCustomError } from './error';
-export { Message } from './types';
+export { Message, Dict } from './types';
 export { LocalBarkeep };
 export * from './services';
 

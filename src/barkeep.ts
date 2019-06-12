@@ -7,16 +7,16 @@ import { Handler, StrictHandler, StrictHandlerResponse, Service, ServiceGenerato
 import { createCustomError, CustomError, TavernError, makeErrorMessage } from './error';
 
 interface MessengerHelpers {
-  msg: (message: Message | string | undefined, payload?: object, ctx?: object) => Message | undefined,
-  isError: (message: Message | string) => boolean,
-  match: (message: string | Message, pattern: string | string[]) => boolean,
-  error: <T extends string>(error: Error | string | CustomError<T>, status?: number, ctx?: object) => Message
+  msg: (message: Message|string|undefined, payload?: object, ctx?: object) => Message|undefined,
+  isError: (message: Message|string) => boolean,
+  match: (message: Message|string, pattern: string|string[]) => boolean,
+  error: <T extends string>(error: Error|CustomError<T>|string, status?: number, ctx?: object) => Message
 }
 
 interface CoreMessenger {
-  ask: (this: Messenger, message: Message | string | undefined, payload?: object, ctx?: object) => Promise<Message>,
-  tell: (this: Messenger, message: Message | string | undefined, payload?: object, ctx?: object) => Message
-  throw: (this: Messenger, error: string | Error, status?: number, ctx?: object) => Message
+  ask: (this: Messenger, message: Message|string|undefined, payload?: object, ctx?: object) => Promise<Message>,
+  tell: (this: Messenger, message:Message|string|undefined, payload?: object, ctx?: object) => Message
+  throw: (this: Messenger, error: Error|string, status?: number, ctx?: object) => Message
   listen: (this: Messenger) => void,
 }
 
@@ -31,7 +31,6 @@ type ServiceInput = Service | Subscriptions | ServiceConstructor | ServiceGenera
 export interface Registrar {
   register: (this: Registrar, ...services: ServiceInput[]) => Registrar
   use: (this: Registrar, pattern: string, handler: Handler, options: UseOptions) => Registrar
-  // protected matchHandlers(message: Message): { [pattern: string]: Handler[] }
 }
 
 export type Barkeep = Registrar & Messenger;
@@ -58,37 +57,29 @@ export type Barkeep = Registrar & Messenger;
 //   return responses[0];
 // };
 
-export abstract class AbstractBarkeep implements Barkeep {
-  protected methods: Messenger = {
-    msg: this.msg,
-    isError: this.isError,
-    match: this.match,
-    error: this.error,
-    ask: async (message: any) => this.error(new TavernError('No implementation')),
-    tell: (message: any) => this.error(new TavernError('No implementation')),
-    throw: (error: any) => this.error(new TavernError('No implementation')),
-    listen: () => { return; }
-  }
+const NotRegisteredError = createCustomError('NotRegisteredError');
 
+export const MockMessenger = {
+  msg: (message: Message|string|undefined, payload?: object, ctx?: object) => makeErrorMessage(new NotRegisteredError()),
+  isError: (message: Message|string) => false,
+  match: (message: Message|string, pattern: string|string[]) => false,
+  error: makeErrorMessage,
+  ask: async (message: Message|string|undefined, payload?: object, ctx?: object) => makeErrorMessage(new NotRegisteredError()),
+  tell: (message: Message|string|undefined, payload?: object, ctx?: object) => makeErrorMessage(new NotRegisteredError()),
+  throw: (error: Error|string, status?: number, ctx?: object) => makeErrorMessage(new NotRegisteredError()),
+  listen: () => { return; }
+}
+
+export abstract class AbstractBarkeep implements Barkeep {
+  protected messenger: Messenger;
   private builtApi: boolean = false;
-  protected api: MessengerApi;
   private listeners: { [pattern: string]: StrictHandler[] };
   private matchers: { [pattern: string]: string[] };
 
-  constructor() {
-    this.api = {
-      ...this.methods,
-      barkeep: this.methods
-    };
-    this.listeners = {};
-    this.matchers = {};
-  }
+  protected api: MessengerApi;
 
-  private buildApi(): void {
-    if (this.builtApi) {
-      return;
-    }
-    this.methods = {
+  constructor() {
+    this.messenger = {
       ask: this.ask.bind(this),
       tell: this.tell.bind(this),
       throw: this.throw.bind(this),
@@ -100,12 +91,13 @@ export abstract class AbstractBarkeep implements Barkeep {
     }
 
     this.api = {
-      ...this.methods,
-      barkeep: this.methods
+      ...this.messenger,
+      barkeep: this.messenger
     }
 
-    this.builtApi = true;
-  } 
+    this.listeners = {};
+    this.matchers = {};
+  }
 
   /**
    * Make an error message
@@ -127,15 +119,15 @@ export abstract class AbstractBarkeep implements Barkeep {
    * the payload and context will added to make a message. If it is already a message, it's
    * context will be collected, and structured cleaned.
    * @param  message
-   * @param  [payload={}]
-   * @param  [ctx={}]
+   * @param  [payload]
+   * @param  [ctx]
    * @return Message if one could could be created, else undefined
    */
-  msg(
-      message: Message | string | undefined | void, 
-      payload: object = {}, 
+   msg(
+      message: Message|string|void, 
+      payload : object = {}, 
       ctx: object = {}
-    ): Message | undefined {
+    ): Message|undefined {
     if (message === undefined) {
       return undefined;
     } else if (typeof message === 'string') {
@@ -150,7 +142,7 @@ export abstract class AbstractBarkeep implements Barkeep {
     return undefined;
   }
 
-  isError(message: Message | string) {
+  isError(message: Message|string) {
     return this.match(message, '*ERROR'); 
   }
 
@@ -160,7 +152,7 @@ export abstract class AbstractBarkeep implements Barkeep {
    * @param  pattern
    * @return
    */
-  match(message: string | Message, pattern: string | string[]): boolean {
+  match(message: Message|string, pattern: string|string[]): boolean {
     if (typeof message === 'string') {
       return multimatch(message, pattern).length > 0;
     } else if (message.type !== undefined) {
@@ -177,13 +169,13 @@ export abstract class AbstractBarkeep implements Barkeep {
    * @param   [options={}]
    * @return this
    */
-  use(pattern: string, handler: Handler, options: UseOptions) : Registrar {
+  use(pattern: string, handler: Handler, options: UseOptions = {}) : Registrar {
     const defaultOptions = {
       log: true, 
       setThisToBarkeep: true
     }
 
-    const args: UseOptions = _.defaults(options || {}, defaultOptions);
+    const args: UseOptions = _.defaults(options, defaultOptions);
 
     if (!(typeof pattern === 'string')) {
       this.throw(new TavernError('Subscription pattern must be a string'));
@@ -195,8 +187,7 @@ export abstract class AbstractBarkeep implements Barkeep {
       return this;
     }
 
-    this.buildApi();
-    const wrappedHandler = AbstractBarkeep.addApi(handler, this.api, args);
+    const wrappedHandler = AbstractBarkeep.wrapHandler(handler, this.api, args);
     const upperCasePattern = pattern.toUpperCase();
 
     if (!(pattern in this.listeners)) {
@@ -261,16 +252,16 @@ export abstract class AbstractBarkeep implements Barkeep {
     return _.pick(this.listeners, patterns);
   }
 
-  private static addApi(func: Handler, barkeep: Messenger, options: AddApiOptions) : StrictHandler {
+  private static wrapHandler(func: Handler, barkeep: MessengerApi, options: WrapHandlerOptions = {}) : StrictHandler {
     const defaultOptions = {
       setThisToBarkeep: false
     };
 
-    const args: AddApiOptions = _.defaults(options || {}, defaultOptions);
+    const args: WrapHandlerOptions = _.defaults(options, defaultOptions);
 
     return async (payload: object, ctx: object, type: string) => {
       const that = args.setThisToBarkeep ? barkeep : undefined;
-      const handled = func.call(that, payload, ctx, type, barkeep);
+      const handled = func.call(that, payload, ctx, type, barkeep.barkeep);
       if (handled === undefined) {
         return undefined;
       } else {
@@ -290,16 +281,16 @@ export abstract class AbstractBarkeep implements Barkeep {
     return true;
   }
 
-  abstract ask(this: Messenger, message: Message | string | undefined, payload?: object, ctx?: object): Promise<Message>;
-  abstract tell(this: Messenger, message: Message | string | undefined, payload?: object, ctx?: object): Message;
-  abstract throw(this: Messenger, error: string | Error, status?: number, ctx?: object): Message;
+  abstract ask(this: Messenger, message: Message|string|undefined, payload?: object, ctx?: object): Promise<Message>;
+  abstract tell(this: Messenger, message: Message|string|undefined, payload?: object, ctx?: object): Message;
+  abstract throw(this: Messenger, error: Error|string, status?: number, ctx?: object): Message;
   abstract listen(this: Messenger): void;
 };
 
-interface AddApiOptions {
+interface WrapHandlerOptions {
   setThisToBarkeep?: boolean
 }
 
-interface UseOptions extends AddApiOptions {
+interface UseOptions extends WrapHandlerOptions {
   log?: boolean
 }
