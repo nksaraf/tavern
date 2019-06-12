@@ -8,12 +8,12 @@
     "tavern/**/*"
   ],
   "scripts": {
-    "clean": "rm -rf tavern && mkdir tavern",
+    "clean": "rm -rf tavern && rm -rf deps && mkdir tavern",
+    "preinstall":  "rm -rf node_modules",
     "deploy:local": "npm run clean && npm run build && npm link",
     "compile": "babel src --out-dir tavern --extensions .ts",
     "build": "npm run clean && npm run compile && npm run type:declare",
     "test:script": "NODE_ENV=test && npm run build && babel-node --extensions '.js,.ts' test/test.js -- ",
-    "postinstall": "npm run typedoc:install",
     "prepare": "npm run build",
     "test:watch": "NODE_ENV=test nodemon --exec npm run test:script",
     "_test": "nyc ava",
