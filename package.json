@@ -8,23 +8,27 @@
     "tavern/**/*"
   ],
   "scripts": {
-    "clean": "rm -rf tavern && rm -rf deps && mkdir tavern",
-    "preinstall":  "rm -rf node_modules",
-    "deploy:local": "npm run clean && npm run build && npm link",
-    "compile": "babel src --out-dir tavern --extensions .ts",
-    "build": "npm run clean && npm run compile && npm run type:declare",
-    "test:script": "NODE_ENV=test && npm run build && babel-node --extensions '.js,.ts' test/test.js -- ",
+    
+    "preinstall": "rm -rf node_modules",
     "prepare": "npm run build",
+    "build": "npm run clean && npm run compile && npm run type:declare",
+    "clean": "rm -rf tavern && rm -rf deps && mkdir tavern",
+    "compile": "babel src --out-dir tavern --extensions .ts",
+    "type:declare": "tsc --declaration --emitDeclarationOnly --outFile tavern/index",
+
+    "deploy:local": "npm run clean && npm run build && npm link",
+    
+    "test:script": "NODE_ENV=test && npm run build && babel-node --extensions '.js,.ts' test/test.js -- ",
     "test:watch": "NODE_ENV=test nodemon --exec npm run test:script",
     "_test": "nyc ava",
     "test": "npm run test:script",
-    "docs:clean": "rm -rf docs",
+    
     "docs": "./deps/typedoc/bin/typedoc ./src",
+    "docs:clean": "rm -rf docs",
     "docs:install": "rm -rf deps && git clone https://github.com/TypeStrong/typedoc.git deps/typedoc && cd deps/typedoc && npm install . && npm run build",
     "type:check": "tsc --noEmit",
-    "type:declare": "tsc --declaration --emitDeclarationOnly --outFile tavern/index",
-    "postversion": "git push && git push --tags",
-    "version": "npm run format && git add -A ."
+    "version": "npm run build && git add -A .",
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
@@ -80,7 +84,6 @@
     "@babel/preset-env": "^7.4.5",
     "@babel/preset-typescript": "^7.3.3",
     "@types/body-parser": "^1.17.0",
-    "@types/colors": "^1.2.1",
     "@types/express": "^4.17.0",
     "@types/lodash": "^4.14.134",
     "@types/merge-descriptors": "^1.0.1",
