@@ -9,13 +9,10 @@ import {
 import { CustomError, makeErrorMessage, isErrorMessage } from './error';
 import { makeMessage, match, checkArgType, isConstructor } from './utils';
 
-export interface CoreMessenger {
+export interface Messenger {
   ask: (this: Messenger, message: Message|string|undefined, payload?: object, ctx?: object) => Promise<Message>,
   tell: (this: Messenger, message: Message|string|undefined, payload?: object, ctx?: object) => Message
   throw: (this: Messenger, error: Error|string, status?: number, ctx?: object) => Message
-}
-
-export interface Messenger extends CoreMessenger {
   error: typeof makeErrorMessage,
   msg: typeof makeMessage,
   match: typeof match,
@@ -23,11 +20,32 @@ export interface Messenger extends CoreMessenger {
 }
 
 export interface Listener {
+  /**
+   * Ask any available transportation services to start listening for
+   * new messages (publishes LISTEN command)
+   */
   listen: (this: Messenger) => void
 }
 
 export interface Registrar {
+  /**
+   * Register the service with the Barkeep. This involves adding listeners for
+   * all the patterns that the service subscribes too. It can register a list of services too,
+   * and when given functions or constructors, calls them before registering the service.
+   *
+   * @param  {Object} service
+   * @return {Barkeep} this
+   */
   register: (this: Registrar, ...services: Service[]) => Registrar
+
+  /**
+  * Add the given handler to the list of listeners corresponding to the given
+  * pattern
+  * @param   pattern
+  * @param   handler
+  * @param   [options={}]
+  * @return this
+  */
   use: (this: Registrar, pattern: string, handler: Handler, options?: UseOptions) => Registrar
 }
 
@@ -39,7 +57,6 @@ export abstract class AbstractBarkeep implements Barkeep {
   match = match;
   isError = isErrorMessage;
 
-  protected core: CoreMessenger;
   protected api : Messenger;
   private listeners: { [pattern: string]: StrictHandler[] };
   private matchers: { [pattern: string]: string[] };
@@ -51,14 +68,10 @@ export abstract class AbstractBarkeep implements Barkeep {
     this.listeners = {};
     this.matchers = {};
 
-    this.core = {
+    this.api = {
       ask: this.ask.bind(this),
       tell: this.tell.bind(this),
-      throw: this.throw.bind(this)
-    }
-
-    this.api = {
-      ...this.core,
+      throw: this.throw.bind(this),
       error: makeErrorMessage,
       msg: makeMessage,
       match: match,
@@ -66,17 +79,12 @@ export abstract class AbstractBarkeep implements Barkeep {
     }
   }
 
-
   throw<T extends string>(error: Error|CustomError<T>|string , status: number = 400, ctx: object = {}) : Message {
     return this.tell(
       this.error(error, status, ctx)
     );
   }
 
-  /**
-   * Ask any available transportation services to start listening for
-   * new messages (publishes LISTEN command)
-   */
   listen() {
     this.tell('LISTEN');
   }
@@ -106,14 +114,6 @@ export abstract class AbstractBarkeep implements Barkeep {
     }
   }
 
-  /**
-  * Add the given handler to the list of listeners corresponding to the given
-  * pattern
-  * @param   pattern
-  * @param   handler
-  * @param   [options={}]
-  * @return this
-  */
   use(pattern: string, handler: Handler, options: UseOptions = {}) : Registrar {
     try {
       checkArgType(pattern, 'string', 'pattern');
@@ -180,14 +180,6 @@ export abstract class AbstractBarkeep implements Barkeep {
     }
   }
 
-  /**
-   * Register the service with the Barkeep. This involves adding listeners for
-   * all the patterns that the service subscribes too. It can register a list of services too,
-   * and when given functions or constructors, calls them before registering the service.
-   *
-   * @param  {Object} service
-   * @return {Barkeep} this
-   */
   register(...services: Service[]) {
     for (let i = 0; i < services.length; i += 1) {
       this.registerService(services[i]);
