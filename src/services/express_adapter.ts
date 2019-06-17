@@ -1,40 +1,29 @@
 import http from 'http';
-import morgan from 'morgan';
 import express from 'express';
 
-import { BaseService, Message, Dict } from '../index';
+import tavern from '../tavern';
+import { Message } from '../types';
 
 interface TRequest {
-  path: string; 
+  path: string;
   method: string;
   body?: object;
   query?: object;
   headers?: http.IncomingHttpHeaders;
 }
 
-interface TResponsePayload extends Dict {
-  status: number;
-}
-
-interface TResponseCtx extends Dict {
-  request: string;
-}
-
-export default class ExpressAdapter extends BaseService {
+export default class ExpressAdapter extends tavern.Service {
   app: express.Express;
 
-  constructor() {
+  constructor(app: express.Express) {
     super();
-    this.app = express();
-    this.app.use(express.urlencoded({ extended: false }));
-    this.app.use(express.json());
-    this.app.use(morgan('common'));
+    this.app = app;
   }
 
   middleware = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.log();
     const tRequest: TRequest = {
-      //TODO: parse url properly (from express)
+      // TODO: parse url properly (from express)
       path: req.path,
       method: req.method,
       body: req.body,
@@ -42,7 +31,7 @@ export default class ExpressAdapter extends BaseService {
       headers: req.headers
     };
 
-    const { type, payload, ctx } = await this.barkeep.ask('HANDLE_REQUEST', { req: tRequest });
+    const { type, payload, ctx } = await this.ask('HANDLE_REQUEST', { req: tRequest });
 
     let response: Message;
     if (!this.match(type, 'RESPONSE')) {
@@ -63,11 +52,10 @@ export default class ExpressAdapter extends BaseService {
   listen = async () => {
     try {
       this.app.use(this.middleware);
-      const server = http.createServer(this.app);
-      await server.listen(process.env.PORT || 5000);
-      return this.barkeep.tell('LOG', { message: `🚀 Serving at http://:::${process.env.PORT || 5000}/` });
+      await this.app.listen(process.env.PORT || 5000);
+      return this.tell('LOG', { message: `🚀 Serving at http://:::${process.env.PORT || 5000}/` });
     } catch (error) {
-      return this.barkeep.tell(this.error(error.message));
+      return this.tell(this.error(error.message));
     }
   }
 

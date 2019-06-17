@@ -14,17 +14,19 @@
     "compile": "babel src --out-dir tavern --extensions .ts",
     "type:declare": "tsc --declaration --emitDeclarationOnly --outFile tavern/index",
     "deploy:local": "npm run clean && npm run build && npm link",
-    "test:script": "NODE_ENV=test && babel-node --extensions '.js,.ts' test/test.js -- ",
-    "test:watch": "NODE_ENV=test nodemon --exec npm run test:script",
-    "_test": "nyc ava",
-    "test": "npm run test:script",
+    "test:script": "NODE_ENV=test && babel-node --extensions '.js,.ts' test/script.ts -- ",
+    "test:watch": "NODE_ENV=test nodemon --exec npm run test:local",
+    "test": "jest --collectCoverage --verbose",
+    "test:min": "jest",
     "test:local": "npm run compile && npm run test",
     "docs": "./deps/typedoc/bin/typedoc ./src",
     "docs:clean": "rm -rf docs",
     "docs:install": "rm -rf deps && git clone https://github.com/TypeStrong/typedoc.git deps/typedoc && cd deps/typedoc && npm install . && npm run build",
     "type:check": "tsc --noEmit",
+    "type:watch": "NODE_ENV=test nodemon --exec npm run type:check",
     "version": "npm run build && git add -A .",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push && git push --tags",
+    "test:cover": "open coverage/lcov-report/index.html"
   },
   "repository": {
     "type": "git",
@@ -35,41 +37,17 @@
   },
   "homepage": "https://github.com/nksaraf/tavern#readme",
   "author": "Nikhil Saraf <nsaraf98@gmail.com>",
-  "ava": {
-    "require": [
-      "./test/_register.js"
-    ],
-    "files": [
-      "test/*"
-    ],
-    "sources": [
+  "nodemonConfig": {
+    "ext": "js,ts",
+    "watch": [
       "src/**/*",
       "test/*"
-    ],
-    "watch": true
-  },
-  "nodemonConfig": {
-    "ext": "js,ts"
-  },
-  "nyc": {
-    "require": [
-      "@babel/register"
-    ],
-    "reporter": [
-      "lcov",
-      "text"
-    ],
-    "sourceMap": false,
-    "instrument": false
+    ]
   },
   "dependencies": {
-    "body-parser": "^1.19.0",
     "chalk": "*",
-    "express": "^4.17.1",
-    "http": "0.0.0",
     "lodash": "^4.17.11",
     "merge-descriptors": "^1.0.1",
-    "morgan": "^1.9.1",
     "multimatch": "^4.0.0"
   },
   "devDependencies": {
@@ -81,6 +59,7 @@
     "@babel/preset-typescript": "^7.3.3",
     "@types/body-parser": "^1.17.0",
     "@types/express": "^4.17.0",
+    "@types/jest": "^24.0.14",
     "@types/lodash": "^4.14.134",
     "@types/merge-descriptors": "^1.0.1",
     "@types/morgan": "^1.7.35",
@@ -88,14 +67,15 @@
     "@types/node": "^12.0.7",
     "@typescript-eslint/eslint-plugin": "^1.10.2",
     "@typescript-eslint/parser": "^1.10.2",
-    "ava": "^2.0.0",
     "babel-eslint": "^10.0.1",
-    "babel-plugin-istanbul": "^5.1.4",
+    "babel-jest": "^24.8.0",
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.17.3",
+    "eslint-plugin-jest": "^22.6.4",
+    "http": "0.0.0",
+    "jest": "^24.8.0",
     "nodemon": "^1.19.1",
-    "nyc": "^14.1.1",
     "typescript": "^3.5.1"
   }
 }

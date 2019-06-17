@@ -1,7 +1,7 @@
 import _ from 'lodash';
 
 import { AbstractBarkeep } from './barkeep';
-import { TavernError, CustomError } from './error';
+import { TavernError } from './error';
 import { Message } from './types';
 import { StrictHandler } from './service';
 
@@ -14,7 +14,7 @@ export default class LocalBarkeep extends AbstractBarkeep {
   private async askRemainingHandlers(request: Message, handlers: StrictHandler[], index: number): Promise<void> {
     for (let i = index; i < handlers.length; i += 1) {
       const { payload, ctx, type } = request;
-      const handlerResponse = handlers[i](payload, ctx, type, this.api.barkeep);
+      const handlerResponse = handlers[i](payload, ctx, type, this.api);
       if (handlerResponse) {
         (handlerResponse).then((response) => this.tell(response, undefined, request.ctx));
       }
@@ -30,7 +30,7 @@ export default class LocalBarkeep extends AbstractBarkeep {
    */
   async ask(
       message: Message|string|undefined,
-      payload: object = {}, 
+      payload: object = {},
       ctx: object = {}
     ): Promise<Message> {
     const request = this.msg(message, payload, ctx);
@@ -48,15 +48,18 @@ export default class LocalBarkeep extends AbstractBarkeep {
       let response;
       try {
         response = this.msg(
-          await handler(request.payload, request.ctx, request.type, this.api.barkeep), 
-          undefined, 
+          await handler(request.payload, request.ctx, request.type, this.api),
+          undefined,
           request.ctx
         );
       } catch (error) {
         response = this.error(error, undefined, request.ctx);
       }
       if (response !== null && response !== undefined) {
-        // add way to identify proper response
+        // TODO: add way to define what proper response is (throught context fields)
+        // TODO: add way to merge resposnes, different ask workflow
+        // TODO: transformers implementation
+        // TODO: plugins api
         finalResponse = response;
         if (!(finalResponse.ctx.private)) {
           this.tell(finalResponse);
@@ -68,9 +71,8 @@ export default class LocalBarkeep extends AbstractBarkeep {
     this.askRemainingHandlers(request, handlers, i + 1);
 
     if (finalResponse === undefined) {
-      return this.throw(new TavernError('No reply'), 404, request.ctx);
+      return this.throw(new TavernError('No response found'), 404, request.ctx);
     }
-
     finalResponse.ctx.request = request.type;
     return finalResponse;
   }
@@ -81,7 +83,7 @@ export default class LocalBarkeep extends AbstractBarkeep {
     const handlers = _.flatMap(Object.values(listeners));
     for (let i = 0; i < handlers.length; i += 1) {
       const { payload, ctx, type } = message;
-      handlers[i](payload, ctx, type, this.api.barkeep);
+      handlers[i](payload, ctx, type, this.api);
     }
   }
 
@@ -89,7 +91,7 @@ export default class LocalBarkeep extends AbstractBarkeep {
    * Tells all the subscribed listeners about the given message asyncronously
    * and returns the same message to further be returned to answer requests.
    *
-   * @param    message Type of the message or the whole {@link Message}
+   * @param   message Type of the message or the whole {@link Message}
    * @param   [payload]  Payload of the message
    * @param   [ctx]      Context associated with the message
    * @returns same
@@ -102,19 +104,5 @@ export default class LocalBarkeep extends AbstractBarkeep {
       this.asyncTell(event);
       return event;
     }
-  }
-
-  throw<T extends string>(error: Error|CustomError<T>|string , status: number = 400, ctx: object = {}) {
-    return this.tell(
-      this.error(error, status, ctx)
-    );
-  }
-
-  /**
-   * Ask any available transportation services to start listening for
-   * new messages (publishes LISTEN command)
-   */
-  listen() {
-    this.tell('LISTEN');
   }
 }

@@ -1,13 +1,14 @@
 import chalk from 'chalk';
 import _ from 'lodash';
 
-import { BaseService, Dict, createCustomError } from '../index';
+import tavern from '../tavern';
+import { Dict } from '../types';
 
-const LoggerError = createCustomError('LoggerError');
+// const LoggerError = tavern.createCustomError('LoggerError');
 
-export default class Logger extends BaseService {
+export default class Logger extends tavern.Service {
   private log: (message?: any, ...optionalParams: any[]) => void
-  
+
   constructor(log: ((message?: any, ...optionalParams: any[]) => void) = console.log) {
     super();
     this.log = log;

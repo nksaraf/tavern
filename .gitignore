@@ -66,3 +66,4 @@ docs
 .nyc_output
 coverage
 deps
+.vscode

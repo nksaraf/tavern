@@ -1,7 +1,8 @@
 {
     "env": {
         "es6": true,
-        "node": true
+        "node": true,
+        "jest/globals": true
     },
     "parser": "@typescript-eslint/parser",
     "extends": ["airbnb-base", "plugin:@typescript-eslint/recommended"],
@@ -25,5 +26,5 @@
         "indent": "off",
         "@typescript-eslint/indent": ["error", 2]
     },
-    "plugins": [ "@typescript-eslint" ]
+    "plugins": [ "@typescript-eslint", "jest" ]
 }

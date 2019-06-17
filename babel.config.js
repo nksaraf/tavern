@@ -1,4 +1,4 @@
-module.exports = function (api) {
+module.exports = (api) => {
   api.cache(false);
 
   const presets = [
@@ -8,7 +8,8 @@ module.exports = function (api) {
           node: 'current'
         }
       }
-    ], '@babel/preset-typescript'
+    ],
+    '@babel/preset-typescript'
   ];
 
   const plugins = [
@@ -18,13 +19,6 @@ module.exports = function (api) {
 
   return {
     presets,
-    plugins,
-    env: {
-      test: {
-        plugins: [
-          'istanbul'
-        ]
-      }
-    }
+    plugins
   };
 };

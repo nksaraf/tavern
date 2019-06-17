@@ -1,5 +1,6 @@
 import { Message } from './types';
 import _ from 'lodash';
+import { checkArgType, throwTypeError, createMatcher } from './utils';
 
 export interface CustomError<T extends string> extends Error {
   name: T;
@@ -9,7 +10,7 @@ export interface CustomError<T extends string> extends Error {
 
 // interface CustomErrorConstructor<T extends string> {
 //   new (message: string, status?: number, ctx?: object): CustomError<T>;
-// } 
+// }
 
 // interface CustomErrorConstructor<T extends string> {};
 
@@ -20,9 +21,14 @@ export interface CustomError<T extends string> extends Error {
  * @return Custom error class
  */
 export function createCustomError<T extends string>(name: T) : any {
+  checkArgType(name, 'string', 'name');
+
   function CustomError(this: Error, message = name, status = 400, ctx = {}) : CustomError<T> {
-    const error = new Error(message);
-    const customError: CustomError<T> = Object.assign(error, { name, status, ctx });
+    const error = new Error(checkArgType(message, 'string', 'message', name));
+    const errorStatus = checkArgType(status, 'number', 'status', 400);
+    const errorCtx = Object.assign({}, checkArgType(ctx, 'object', 'ctx', {}));
+
+    const customError: CustomError<T> = Object.assign(error, { name, status: errorStatus, ctx: errorCtx });
     Object.setPrototypeOf(customError, Object.getPrototypeOf(this));
     if (Error.captureStackTrace) {
       Error.captureStackTrace(customError, CustomError);
@@ -44,31 +50,39 @@ export function createCustomError<T extends string>(name: T) : any {
 export const TavernError = createCustomError('TavernError');
 
 export function makeErrorMessage<T extends string>(
-    error: Error|CustomError<T>|string, 
-    status = 400, 
+    error: Error|CustomError<T>|string,
+    status = 400,
     ctx: object = {}
   ): Message {
+
   let errorName;
   let errorMessage;
   let errorStatus;
   let errorCtx;
 
-  if (typeof error === 'string') {
+  if (error === undefined) throwTypeError('error', error, 'Error|string');
+  status = checkArgType(status, 'number', 'status', 400);
+  ctx = checkArgType(ctx, 'object', 'ctx', {});
+
+  if (_.isString(error)) {
     errorName = 'ERROR';
     errorMessage = error;
     errorStatus = status;
-    errorCtx = ctx;
+    errorCtx = Object.assign({}, ctx);
+  } else if (_.isString(error.message)) {
+    errorName = checkArgType(error.name, 'string', 'error.name', 'ERROR');
+    errorMessage = checkArgType(error.message, 'string', 'error.message');
+    errorStatus = checkArgType((error as CustomError<T>).status, 'number', 'error.status', status);
+    errorCtx = Object.assign({}, ctx, checkArgType((error as CustomError<T>).ctx, 'object', 'error.ctx', {}));
   } else {
-    const { name, message } = error;
-    errorName = name;
-    errorMessage = message;
-    errorStatus = (error as CustomError<T>).status || status;
-    errorCtx = Object.assign({}, ctx, (error as CustomError<T>).ctx);
+    throwTypeError('error', error, 'Error|string');
   }
 
   return {
     type: _.snakeCase(errorName).toUpperCase(),
     payload: { error: errorMessage, status: errorStatus },
-    ctx: errorCtx,
+    ctx: (errorCtx as object),
   };
 }
+
+export const isErrorMessage = createMatcher('*ERROR');

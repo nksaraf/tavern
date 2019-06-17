@@ -7,3 +7,6 @@ export type Message = {
 export type Dict = {
   [key: string]: any
 }
+
+export { Messenger, Barkeep } from './barkeep';
+export { Service, Handler } from './service';
