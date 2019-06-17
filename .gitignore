@@ -62,7 +62,6 @@ typings/
 
 tavern
 docs
-
 .nyc_output
 coverage
 deps
