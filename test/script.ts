@@ -1,4 +1,5 @@
-import tavern, { Logger, Parser, ParserObject, RequestHandler } from '../src';
+import tavern, { Logger, Parser, RequestHandler } from '../src';
+import ParserObject from './parser';
 
 const UserError = tavern.createCustomError('UserError');
 
