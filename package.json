@@ -8,23 +8,22 @@
     "tavern/**/*"
   ],
   "scripts": {
-    "watch": "nodemon --exec npm run ",
-    "babel": "babel-node --extensions '.js,.ts'",
-    "build": "npm run clean && npm run compile && npm run type:declare",
-    "clean": "rm -rf tavern && rm -rf deps && mkdir tavern",
-    "compile": "babel src --out-dir tavern --extensions '.js,.ts'",
-    "type:declare": "tsc --declaration --emitDeclarationOnly --outDir tavern",
-    "type:check": "tsc --noEmit",
-    "deploy:local": "npm run build && npm link",
-    "test:script": "npm run babel -- test/script.ts",
+    "config": "cockpit",
+    "build": "npm run clean && npm run compile",
     "test": "jest --collectCoverage --verbose",
+    "deploy:local": "npm run build && npm link",
+    "test:script": "ts-node test/script.ts",
+    "type:check": "tsc --noEmit",
+    "coverage": "open coverage/lcov-report/index.html",
     "test:min": "jest",
+    "version": "npm run build && git add -A .",
+    "postversion": "git push && git push --tags",
     "docs": "npx typedoc ./src && npm run docs:open",
     "docs:open": "open docs/index.html",
     "docs:clean": "rm -rf docs",
-    "version": "npm run build && git add -A .",
-    "postversion": "git push && git push --tags",
-    "test:cover": "open coverage/lcov-report/index.html"
+    "watch": "nodemon --exec npm run ",
+    "clean": "rm -rf tavern && mkdir tavern",
+    "compile": "tsc --declaration --outDir tavern"
   },
   "repository": {
     "type": "git",
@@ -35,13 +34,6 @@
   },
   "homepage": "https://github.com/nksaraf/tavern#readme",
   "author": "Nikhil Saraf <nsaraf98@gmail.com>",
-  "nodemonConfig": {
-    "ext": "js,ts",
-    "watch": [
-      "src/**/*",
-      "test/*"
-    ]
-  },
   "dependencies": {
     "chalk": "*",
     "lodash": "^4.17.11",
@@ -79,5 +71,37 @@
     "jest": "^24.8.0",
     "nodemon": "^1.19.1",
     "typescript": "^3.5.1"
+  },
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": "current"
+          }
+        }
+      ],
+      "@babel/preset-typescript"
+    ],
+    "plugins": [
+      "@babel/plugin-proposal-class-properties",
+      "@babel/plugin-proposal-object-rest-spread"
+    ]
+  },
+  "nodemonConfig": {
+    "ext": "js,ts",
+    "watch": [
+      "src/**/*",
+      "test/*"
+    ]
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageReporters": [
+      "text",
+      "lcov"
+    ],
+    "coverageDirectory": "coverage"
   }
 }
