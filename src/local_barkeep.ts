@@ -2,7 +2,7 @@ import _ from 'lodash';
 
 import { AbstractBarkeep } from './barkeep';
 import { TavernError } from './error';
-import { Message } from './types';
+import { Message } from './utils';
 import { StrictHandler } from './service';
 
 // interface AskRequestCtx {
@@ -38,8 +38,7 @@ export default class LocalBarkeep extends AbstractBarkeep {
       return this.throw(new TavernError('Invalid message to ask'));
     }
 
-    const listeners = this.matchHandlers(request);
-    const handlers = _.flatMap(Object.values(listeners));
+    const handlers = this.getHandlers(request);
 
     let finalResponse: Message|undefined;
     let i;
@@ -79,8 +78,7 @@ export default class LocalBarkeep extends AbstractBarkeep {
 
 
   private async asyncTell(message: Message) : Promise<void> {
-    const listeners = this.matchHandlers(message);
-    const handlers = _.flatMap(Object.values(listeners));
+    const handlers = this.getHandlers(message);
     for (let i = 0; i < handlers.length; i += 1) {
       const { payload, ctx, type } = message;
       handlers[i](payload, ctx, type, this.api);

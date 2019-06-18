@@ -1,7 +1,7 @@
 import { Messenger } from './barkeep';
 import { makeErrorMessage, createCustomError, isErrorMessage } from './error';
-import { match, makeMessage } from './utils';
-import { Message, Dict } from './types';
+import { Message, Dict, makeMessage } from './utils';
+import { match } from './matcher';
 
 type ResponseVariants = Message|string|void;
 type HandlerResponse = ResponseVariants|Promise<ResponseVariants>;

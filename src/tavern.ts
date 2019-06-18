@@ -1,8 +1,9 @@
 import LocalBarkeep from './local_barkeep';
 import { TavernError, makeErrorMessage, isErrorMessage, createCustomError } from './error';
-import { makeMessage, match } from './utils';
+import { makeMessage } from './utils';
 import { AbstractBarkeep, Barkeep } from './barkeep';
 import { BaseService } from './service';
+import { match } from './matcher';
 
 import _ from 'lodash';
 
@@ -20,7 +21,7 @@ const defaultOptions = {
  * Factory function to create an instance of {@link Barkeep}
  * @return barkeep
  */
-function tavern(options: TavernOptions = {}): Barkeep {
+function tavern(options: TavernOptions = {}) : Barkeep {
   const args = _.defaults(options, defaultOptions);
   if (args.mode === 'local') {
     const barkeep = new LocalBarkeep();

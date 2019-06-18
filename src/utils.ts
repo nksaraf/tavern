@@ -1,19 +1,27 @@
-import { Message } from './types';
 import _ from 'lodash';
-import multimatch from 'multimatch';
+
+export type Message = {
+  type: string
+  payload: Dict,
+  ctx: Dict
+}
+
+export type Dict = {
+  [key: string]: any
+}
 
 export function makeMessage(
     message: Message|string|undefined,
-    payload : object = {}, 
+    payload : object = {},
     ctx: object = {}
   ): Message|undefined {
 
   if (message === undefined) return undefined;
 
   if (_.isString(message)) {
-    return { 
-      type: message.toUpperCase(), 
-      payload: Object.assign({}, checkArgType(payload, 'object', 'payload', {})), 
+    return {
+      type: message.toUpperCase(),
+      payload: Object.assign({}, checkArgType(payload, 'object', 'payload', {})),
       ctx: Object.assign({}, checkArgType(ctx, 'object', 'ctx', {}))
     };
   } else if (_.isString(message.type)) {
@@ -25,23 +33,6 @@ export function makeMessage(
   } else {
     throwTypeError('message', message, 'object|string');
   }
-}
-
-export function match(message: Message|string, pattern: string|string[]): boolean {
-  if (message === undefined) {
-    return false;
-  }
-
-  if (_.isString(message)) {
-    return multimatch(message.toUpperCase(), pattern).length > 0;
-  } else if (checkArgType(message, 'object', 'message') && checkArgType(message.type, 'string', 'message.type')) {
-    return multimatch(message.type.toUpperCase(), pattern).length > 0;
-  }
-  return false;
-}
-
-export function createMatcher(pattern: string|string[]) {
-  return (message: Message|string) => match(message, pattern);
 }
 
 export function isConstructor(object: any): boolean {
@@ -60,7 +51,7 @@ function isSimpleObject(value: any) {
 }
 
 const checkers: { [key: string]: (value?: any) => boolean } = {
-  object: isSimpleObject, 
+  object: isSimpleObject,
   number: _.isNumber,
   string: _.isString,
   message: ({ type, payload, ctx }) => _.isString(type) && isSimpleObject(payload) && isSimpleObject(ctx),

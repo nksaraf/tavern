@@ -1,25 +1,25 @@
 import mixin from 'merge-descriptors';
 import _ from 'lodash';
 
-import { Message } from './types';
 import {
   Handler, StrictHandler, StrictHandlerResponse, Service, Subscriber,
   ServiceGenerator, ServiceConstructor, Subscriptions
 } from './service';
 import { CustomError, makeErrorMessage, isErrorMessage } from './error';
-import { makeMessage, match, checkArgType, isConstructor } from './utils';
+import { Message, makeMessage, checkArgType, isConstructor } from './utils';
+import { match, Pattern, GlobPattern } from './matcher';
 
 export interface Messenger {
-  ask: (this: Messenger, message: Message|string|undefined, payload?: object, ctx?: object) => Promise<Message>,
+  ask: (this: Messenger, message: Message|string|undefined, payload?: object, ctx?: object) => Promise<Message>
   tell: (this: Messenger, message: Message|string|undefined, payload?: object, ctx?: object) => Message
   throw: (this: Messenger, error: Error|string, status?: number, ctx?: object) => Message
-  error: typeof makeErrorMessage,
-  msg: typeof makeMessage,
-  match: typeof match,
+  error: typeof makeErrorMessage
+  msg: typeof makeMessage
+  match: typeof match
   isError: typeof isErrorMessage
 }
 
-export interface Listener {
+interface Listener {
   /**
    * Ask any available transportation services to start listening for
    * new messages (publishes LISTEN command)
@@ -27,7 +27,22 @@ export interface Listener {
   listen: (this: Messenger) => void
 }
 
-export interface Registrar {
+interface MessagePattern extends Pattern {
+  handlers: StrictHandler[];
+}
+
+class GlobMessagePattern extends GlobPattern implements MessagePattern {
+  handlers: StrictHandler[]
+
+  constructor(pattern: string) {
+    super(pattern);
+    this.handlers = [];
+  }
+}
+
+interface Registrar {
+  patterns: { [pattern: string]: MessagePattern }
+
   /**
    * Register the service with the Barkeep. This involves adding listeners for
    * all the patterns that the service subscribes too. It can register a list of services too,
@@ -47,6 +62,8 @@ export interface Registrar {
   * @return this
   */
   use: (this: Registrar, pattern: string, handler: Handler, options?: UseOptions) => Registrar
+
+  getHandlers: (this: Registrar, message: Message|string) => StrictHandler[]
 }
 
 export type Barkeep = Registrar & Messenger & Listener;
@@ -57,17 +74,11 @@ export abstract class AbstractBarkeep implements Barkeep {
   match = match;
   isError = isErrorMessage;
 
+  patterns: { [pattern: string]: MessagePattern };
   protected api : Messenger;
-  private listeners: { [pattern: string]: StrictHandler[] };
-  private matchers: { [pattern: string]: string[] };
-
-  abstract ask(this: Messenger, message: Message|string|undefined, payload?: object, ctx?: object): Promise<Message>;
-  abstract tell(this: Messenger, message: Message|string|undefined, payload?: object, ctx?: object): Message;
 
   constructor() {
-    this.listeners = {};
-    this.matchers = {};
-
+    this.patterns = {};
     this.api = {
       ask: this.ask.bind(this),
       tell: this.tell.bind(this),
@@ -76,41 +87,6 @@ export abstract class AbstractBarkeep implements Barkeep {
       msg: makeMessage,
       match: match,
       isError: isErrorMessage,
-    }
-  }
-
-  throw<T extends string>(error: Error|CustomError<T>|string , status: number = 400, ctx: object = {}) : Message {
-    return this.tell(
-      this.error(error, status, ctx)
-    );
-  }
-
-  listen() {
-    this.tell('LISTEN');
-  }
-
-  protected matchHandlers(message: Message) : { [pattern: string]: StrictHandler[] } {
-    checkArgType(message, 'message', 'message');
-    const patterns = Object.keys(this.matchers)
-      .filter((pattern) => this.match(message.type, this.matchers[pattern]));
-    return _.pick(this.listeners, patterns);
-  }
-
-  private static wrapHandler(func: Handler, barkeep: Messenger, options: WrapHandlerOptions = {}) : StrictHandler {
-    const defaultOptions = {
-      setThisToBarkeep: false
-    };
-
-    const args: WrapHandlerOptions = _.defaults(options, defaultOptions);
-
-    return async (payload: object, ctx: object, type: string) => {
-      const that = args.setThisToBarkeep ? barkeep : undefined;
-      const handled = func.call(that, payload, ctx, type, barkeep);
-      if (handled === undefined) {
-        return undefined;
-      } else {
-        return (handled as StrictHandlerResponse);
-      }
     }
   }
 
@@ -131,18 +107,48 @@ export abstract class AbstractBarkeep implements Barkeep {
 
     const args: UseOptions = _.defaults(options, defaultOptions);
     const wrappedHandler = AbstractBarkeep.wrapHandler(handler, this.api, args);
-    const upperCasePattern = pattern.toUpperCase();
 
-    if (!(pattern in this.listeners)) {
-      this.listeners[upperCasePattern] = [];
-      this.matchers[upperCasePattern] = upperCasePattern.split('|').map((part) => _.trim(part, ' '));
+    pattern = pattern.toUpperCase();
+    if (!(pattern in this.patterns)) {
+      this.patterns[pattern] = new GlobMessagePattern(pattern);
     }
-    this.listeners[upperCasePattern].push(wrappedHandler);
+    this.patterns[pattern].handlers.push(wrappedHandler);
 
     if (args.logSubscription) {
-      this.tell('SUBSCRIBED', { patterns: [upperCasePattern] });
+      this.tell('SUBSCRIBED', { patterns: [pattern] });
     }
     return this;
+  }
+
+  register(...services: Service[]) {
+    for (let i = 0; i < services.length; i += 1) {
+      this.registerService(services[i]);
+    }
+    return this;
+  }
+
+  getHandlers(message: string|Message): StrictHandler[] {
+    checkArgType(message, 'message', 'message');
+    return _.flatMap(this.patterns, (value) => {
+      if(value.match(message)) {
+        return value.handlers;
+      } else {
+        return [];
+      }
+    });
+  }
+
+  abstract ask(this: Messenger, message: Message|string|undefined, payload?: object, ctx?: object): Promise<Message>;
+  abstract tell(this: Messenger, message: Message|string|undefined, payload?: object, ctx?: object): Message;
+
+  throw<T extends string>(error: Error|CustomError<T>|string , status: number = 400, ctx: object = {}) : Message {
+    return this.tell(
+      this.error(error, status, ctx)
+    );
+  }
+
+  listen() {
+    this.tell('LISTEN');
   }
 
   private registerService(serviceInput: Service) {
@@ -180,12 +186,24 @@ export abstract class AbstractBarkeep implements Barkeep {
     }
   }
 
-  register(...services: Service[]) {
-    for (let i = 0; i < services.length; i += 1) {
-      this.registerService(services[i]);
+  private static wrapHandler(func: Handler, barkeep: Messenger, options: WrapHandlerOptions = {}) : StrictHandler {
+    const defaultOptions = {
+      setThisToBarkeep: false
+    };
+
+    const args: WrapHandlerOptions = _.defaults(options, defaultOptions);
+
+    return async (payload: object, ctx: object, type: string) => {
+      const that = args.setThisToBarkeep ? barkeep : undefined;
+      const handled = func.call(that, payload, ctx, type, barkeep);
+      if (handled === undefined) {
+        return undefined;
+      } else {
+        return (handled as StrictHandlerResponse);
+      }
     }
-    return this;
   }
+
 }
 
 interface WrapHandlerOptions {
