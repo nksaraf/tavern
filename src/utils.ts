@@ -1,32 +1,5 @@
 import _ from 'lodash';
 
-import { Message } from './types';
-
-export function makeMessage(
-    message: Message|string|void,
-    payload : object = {},
-    ctx: object = {}
-  ): Message|undefined {
-
-  if (message === undefined) return undefined;
-
-  if (_.isString(message)) {
-    return {
-      type: message.toUpperCase(),
-      payload: Object.assign({}, checkArgType(payload, 'object', 'payload', {})),
-      ctx: Object.assign({}, checkArgType(ctx, 'object', 'ctx', {}))
-    };
-  } else if (_.isString(message.type)) {
-    return {
-      type: message.type.toUpperCase(),
-      payload: Object.assign({}, payload, checkArgType(message.payload, 'object', 'message.payload', {})),
-      ctx: Object.assign({}, ctx, checkArgType(message.ctx, 'object', 'message.ctx', {})),
-    };
-  } else {
-    throwTypeError('message', message, 'object|string');
-  }
-}
-
 export function isConstructor(object: any): boolean {
   try {
     new object();

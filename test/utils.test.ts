@@ -1,4 +1,5 @@
-import { makeMessage, throwTypeError, checkArgType } from '../src/utils';
+import { throwTypeError, checkArgType } from '../src/utils';
+import { makeMessage } from '../src/messenger';
 
 const msg = (type, payload, ctx) => ({ type, payload, ctx });
 

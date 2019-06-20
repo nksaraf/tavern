@@ -1,11 +1,11 @@
 import _ from 'lodash';
 import mixin from 'merge-descriptors';
 
-import { makeMessage, isConstructor, checkArgType } from './utils';
+import { isConstructor, checkArgType } from './utils';
 import { Matcher, match, GlobPattern } from './matcher';
 import { makeErrorMessage, isErrorMessage, TavernError } from './error';
-import { Message, Dict, Handler, HandlerResponse, Messenger } from './types';
-import { Subscriptions, Service } from './service';
+import { Messenger, Message, Dict, makeMessage } from './messenger';
+import { Subscriptions, Service, Handler, HandlerResponse } from './service';
 
 interface ServiceGenerator {
   (): Service|Subscriptions

@@ -1,5 +1,5 @@
 import { makeErrorMessage, isErrorMessage } from './error';
-import { makeMessage } from './utils';
+import { makeMessage } from './messenger';
 import { match } from './matcher';
 
 import Barkeep from './barkeep';

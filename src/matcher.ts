@@ -2,7 +2,7 @@ import multimatch from 'multimatch';
 import _ from 'lodash';
 
 import { checkArgType } from './utils';
-import { Message } from './types';
+import { Message } from './messenger';
 
 export interface MatchFunction {
   (message: Message|string): boolean

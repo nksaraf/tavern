@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { checkArgType, throwTypeError } from './utils';
 import { createMatcher } from './matcher';
-import { Message } from './types';
+import { Message } from './messenger';
 
 export interface CustomError<T extends string> extends Error {
   name: T;
