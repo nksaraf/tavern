@@ -23,7 +23,7 @@
     "docs:clean": "rm -rf docs",
     "watch": "nodemon --exec npm run ",
     "clean": "rm -rf tavern && mkdir tavern",
-    "compile": "tsc --declaration --outDir tavern"
+    "compile": "tsc --declaration --allowJs false --outDir tavern"
   },
   "repository": {
     "type": "git",

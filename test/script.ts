@@ -65,4 +65,4 @@ const id = 1;
   await tavern.ask(GET({ path: '/user', body: { id } }));
 })();
 
-tavern.listen();
+// tavern.listen();
