@@ -1,4 +1,4 @@
-import tavern from '../tavern';
+import { createCustomError, Service } from '../tavern';
 import { Message } from '../types';
 import http from 'http';
 
@@ -12,12 +12,12 @@ interface RequestHandlerPayload {
   }
 }
 
-const InvalidRequestError = tavern.createCustomError('InvalidRequestError');
+const InvalidRequestError = createCustomError('InvalidRequestError');
 
-export default class RequestHandler extends tavern.Service {
+export default class RequestHandler extends Service {
   handleRequest = async ({ req }: RequestHandlerPayload) => {
     if (req === undefined) {
-      return this.error(new InvalidRequestError());
+      return this.error(InvalidRequestError());
     }
 
     const parsedRequest = await this.ask('PARSE_REQUEST', { req });

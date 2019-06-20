@@ -23,18 +23,17 @@ import express from 'express';
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded());
-const barkeep = tavern();
 
-barkeep.register(Logger, Parser, RequestHandler, new ExpressAdapter(app));
+tavern.register(Logger, Parser, RequestHandler, new ExpressAdapter(app));
 
-barkeep.use('GET:USER', ({ id }, c, t, api) => {
+tavern.use('GET:USER', ({ id }, c, t, api) => {
   const numId = Number(id);
   if (numId === 2) {
     return api.msg('USER', { name: 'Klay Thompson' });
   }
 });
 
-barkeep.use('GET:USER', ({ id }, c, t, api) => {
+tavern.use('GET:USER', ({ id }, c, t, api) => {
   const numId = Number(id);
   if (numId === 1) {
     return api.msg('USER', { name: 'Stephen Curry' });
@@ -63,7 +62,7 @@ const POST = (req: { method: string; }) => {
 
 const id = 1;
 (async () => {
-  await barkeep.ask(GET({ path: '/user', body: { id } }));
+  await tavern.ask(GET({ path: '/user', body: { id } }));
 })();
 
-// barkeep.listen();
+tavern.listen();

@@ -1,43 +1,38 @@
-import { Messenger } from './barkeep';
-import { makeErrorMessage, createCustomError, isErrorMessage } from './error';
-import { Message, Dict, makeMessage } from './utils';
+import { Message, Dict } from './types';
+import { createCustomError, isErrorMessage, makeErrorMessage } from './error';
 import { match } from './matcher';
+import { makeMessage } from './utils';
 
-type ResponseVariants = Message|string|void;
-type HandlerResponse = ResponseVariants|Promise<ResponseVariants>;
-
-export type Handler = (this: Messenger|any, payload: Dict, ctx: Dict, type: string, barkeep: Messenger) => HandlerResponse;
-
-export type StrictHandlerResponse = Promise<Message|string|undefined>;
-export type StrictHandler = (this: Messenger|any, payload: Dict, ctx: Dict, type: string, barkeep: Messenger) => StrictHandlerResponse;
-
-export type Subscriptions = {
-  [pattern: string] : Handler
+export interface Messenger {
+  ask: (this: Messenger, message: Message|string|void, payload?: object, ctx?: object) => Promise<Message>
+  tell: (this: Messenger, message: Message|string|void, payload?: object, ctx?: object) => Message
+  throw: (this: Messenger, error: Error|string, status?: number, ctx?: object) => Message
+  error: (error: Error|string, status: number, ctx: object) => Message
+  msg: (message: Message|string|void, payload?: object, ctx?: object) => Message | undefined
+  match: (message: Message|string, pattern: string) => boolean
+  isError: (message: Message|string) => boolean
 }
 
-export interface Subscriber {
+export type HandlerResponse = Message|string|void;
+export type Handler = (this: Messenger|any, payload: Dict, ctx: Dict, type: string, barkeep: Messenger) => HandlerResponse|Promise<HandlerResponse>
+
+export interface Subscriptions {
+  [pattern: string]: Handler | Handler[]
+}
+
+export interface Service {
   subscriptions: Subscriptions
 }
 
-export interface ServiceGenerator {
-  (): Subscriber|Subscriptions
-}
-
-export interface ServiceConstructor {
-  new (): Subscriber|Subscriptions
-}
-
-export type Service = Subscriber | Subscriptions | ServiceConstructor | ServiceGenerator;
-
 const NotRegisteredError = createCustomError('NotRegisteredError');
 
-export abstract class BaseService implements Subscriber, Messenger {
-  abstract subscriptions: Subscriptions;
+export abstract class Service implements Service, Messenger {
+  subscriptions: Subscriptions = {};
   msg = makeMessage;
   isError = isErrorMessage;
   match = match;
-  error = makeErrorMessage;
-  ask =  async (message: Message|string|undefined, payload?: object, ctx?: object) => makeErrorMessage(new NotRegisteredError());
-  tell = (message: Message|string|undefined, payload?: object, ctx?: object) => makeErrorMessage(new NotRegisteredError());
-  throw = (error: Error|string, status?: number, ctx?: object) => makeErrorMessage(new NotRegisteredError());
+  error = makeErrorMessage as (error: Error|string, status?: number, ctx?: object) => Message;
+  ask =  async (message: Message|string|void, payload?: object, ctx?: object) => makeErrorMessage(NotRegisteredError());
+  tell = (message: Message|string|void, payload?: object, ctx?: object) => makeErrorMessage(NotRegisteredError());
+  throw = (error: Error|string, status?: number, ctx?: object) => makeErrorMessage(NotRegisteredError());
 }

@@ -1,8 +1,8 @@
 import _ from 'lodash';
-import tavern from '../tavern';
-import { Dict } from '../types';
+import { Service, createCustomError } from '../tavern';
+import { Message, Dict } from '../types';
 
-const ParserError = tavern.createCustomError('ParserError');
+const ParserError = createCustomError('ParserError');
 
 interface ParserPayload extends Dict {
   req?: TRequest;
@@ -15,10 +15,10 @@ interface TRequest {
   query?: object;
 }
 
-export default class Parser extends tavern.Service {
+export default class Parser extends Service {
   parseRequest = ({ req }: ParserPayload) => {
     if (req === undefined) {
-      return this.error(new ParserError('Invalid request'));
+      return this.error(ParserError('Invalid request'));
     }
 
     const {

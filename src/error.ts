@@ -1,6 +1,7 @@
 import _ from 'lodash';
-import { Message, checkArgType, throwTypeError } from './utils';
+import { checkArgType, throwTypeError } from './utils';
 import { createMatcher } from './matcher';
+import { Message } from './types';
 
 export interface CustomError<T extends string> extends Error {
   name: T;
@@ -8,11 +9,9 @@ export interface CustomError<T extends string> extends Error {
   ctx: object;
 }
 
-// interface CustomErrorConstructor<T extends string> {
-//   new (message: string, status?: number, ctx?: object): CustomError<T>;
-// }
-
-// interface CustomErrorConstructor<T extends string> {};
+interface CustomErrorFunction<T extends string> {
+  (message?: string, status?: number, ctx?: object): CustomError<T>;
+}
 
 /**
  * Create an Error class with the given name, can be used to
@@ -20,34 +19,23 @@ export interface CustomError<T extends string> extends Error {
  * @param name Name of error class
  * @return Custom error class
  */
-export function createCustomError<T extends string>(name: T) : any {
+export function createCustomError<T extends string>(name: T) : CustomErrorFunction<T> {
   checkArgType(name, 'string', 'name');
 
-  function CustomError(this: Error, message = name, status = 400, ctx = {}) : CustomError<T> {
+  function CustomError(message: string = name, status = 400, ctx = {}) : CustomError<T> {
     const error = new Error(checkArgType(message, 'string', 'message', name));
     const errorStatus = checkArgType(status, 'number', 'status', 400);
     const errorCtx = Object.assign({}, checkArgType(ctx, 'object', 'ctx', {}));
 
     const customError: CustomError<T> = Object.assign(error, { name, status: errorStatus, ctx: errorCtx });
-    Object.setPrototypeOf(customError, Object.getPrototypeOf(this));
     if (Error.captureStackTrace) {
       Error.captureStackTrace(customError, CustomError);
     }
     return customError;
   }
-
-  CustomError.prototype = Object.create(Error.prototype, {
-    constructor: {
-      value: Error,
-      enumerable: false,
-      writable: true,
-      configurable: true
-    }
-  });
+  CustomError.prototype = new Error();
   return CustomError;
 };
-
-export const TavernError = createCustomError('TavernError');
 
 export function makeErrorMessage<T extends string>(
     error: Error|CustomError<T>|string,
@@ -86,3 +74,5 @@ export function makeErrorMessage<T extends string>(
 }
 
 export const isErrorMessage = createMatcher('*ERROR');
+
+export const TavernError = createCustomError('TavernError');

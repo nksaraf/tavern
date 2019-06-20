@@ -1,28 +1,28 @@
 import multimatch from 'multimatch';
 import _ from 'lodash';
 
-import { Message, checkArgType } from './utils';
+import { checkArgType } from './utils';
+import { Message } from './types';
 
-export interface Matcher {
+export interface MatchFunction {
   (message: Message|string): boolean
 }
 
-export interface Pattern {
-  // handlers: StrictHandler[];
-  match: Matcher;
+export interface Matcher {
+  match: MatchFunction
 }
 
-export class GlobPattern implements Pattern {
-  match: Matcher;
+export class GlobPattern implements Matcher {
+  readonly match: MatchFunction;
 
   private value: string;
   private sub_patterns: string[];
 
-  private splitIntoSubPatterns(pattern: string) : string[] {
+  private static splitIntoSubPatterns(pattern: string) : string[] {
     return pattern.split('|').map((part) => _.trim(part, ' '));
   }
 
-  static match(message: Message|string, pattern: string|string[]): boolean {
+  private static globMatch(message: Message|string, pattern: string|string[]): boolean {
     if (message === undefined) {
       return false;
     }
@@ -37,8 +37,8 @@ export class GlobPattern implements Pattern {
 
   constructor(pattern: string) {
     this.value = pattern.toUpperCase();
-    this.sub_patterns = this.splitIntoSubPatterns(this.value);
-    this.match = (message: Message|string) => GlobPattern.match(message, this.sub_patterns);
+    this.sub_patterns = GlobPattern.splitIntoSubPatterns(this.value);
+    this.match = (message: Message|string) => GlobPattern.globMatch(message, this.sub_patterns);
   }
 }
 
@@ -46,6 +46,6 @@ export function match(message: Message|string, pattern: string): boolean {
   return new GlobPattern(pattern).match(message);
 }
 
-export function createMatcher(pattern: string): Matcher {
+export function createMatcher(pattern: string): MatchFunction {
   return new GlobPattern(pattern).match;
 }

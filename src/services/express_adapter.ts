@@ -2,7 +2,7 @@ import http from 'http';
 import express from 'express';
 import parseurl from 'parseurl';
 
-import tavern from '../tavern';
+import { Service } from '../tavern';
 import { Message } from '../types';
 
 interface TRequest {
@@ -13,7 +13,7 @@ interface TRequest {
   headers?: http.IncomingHttpHeaders;
 }
 
-export default class ExpressAdapter extends tavern.Service {
+export default class ExpressAdapter extends Service {
   app: express.Express;
 
   constructor(app: express.Express) {

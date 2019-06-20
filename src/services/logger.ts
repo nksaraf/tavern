@@ -1,12 +1,12 @@
 import chalk from 'chalk';
 import _ from 'lodash';
 
-import tavern from '../tavern';
+import { Service } from '../tavern';
 import { Dict } from '../types';
 
 // const LoggerError = tavern.createCustomError('LoggerError');
 
-export default class Logger extends tavern.Service {
+export default class Logger extends Service {
   private log: (message?: any, ...optionalParams: any[]) => void
 
   constructor(log: ((message?: any, ...optionalParams: any[]) => void) = console.log) {
@@ -27,6 +27,7 @@ export default class Logger extends tavern.Service {
     }
     const message = (type === 'ERROR') ? `${status}: ${error}` : `${error}`;
     this.log('🍷', chalk.underline.red(type), chalk.red(message));
+    return;
   }
 
   private logSubscription({ patterns, name }: LogSubscriptionPayload, ctx: Dict, type: string) {

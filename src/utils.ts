@@ -1,17 +1,9 @@
 import _ from 'lodash';
 
-export type Message = {
-  type: string
-  payload: Dict,
-  ctx: Dict
-}
-
-export type Dict = {
-  [key: string]: any
-}
+import { Message } from './types';
 
 export function makeMessage(
-    message: Message|string|undefined,
+    message: Message|string|void,
     payload : object = {},
     ctx: object = {}
   ): Message|undefined {
