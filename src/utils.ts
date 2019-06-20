@@ -15,7 +15,7 @@ function isSimpleObject(value: any) {
   return _.isObjectLike(value) && !(_.isArrayLikeObject(value));
 }
 
-const checkers: { [key: string]: (value?: any) => boolean } = {
+const typeCheckers: { [key: string]: (value?: any) => boolean } = {
   object: isSimpleObject,
   number: _.isNumber,
   string: _.isString,
@@ -28,19 +28,19 @@ export function throwTypeError(arg: string, value: any, type: string) : never {
 }
 
 export function checkArgType<T>(value: T, type: string, arg: string, def?: T) : T {
-  if (!(_.isString(type) && type in checkers)) {
-    throw new Error(`type=${type} is not one of ${Object.keys(checkers).map(a => `'${a}'`).join(', ')}`);
+  if (!(_.isString(type) && type in typeCheckers)) {
+    throw new Error(`type=${type} is not one of ${Object.keys(typeCheckers).map(a => `'${a}'`).join(', ')}`);
   }
 
   if (!(_.isString(arg))) throwTypeError('arg', arg, 'string');
 
   if(_.isUndefined(value)) {
-    if (checkers[type](def)) {
+    if (typeCheckers[type](def)) {
       return (def as T);
     } else {
       throw new TypeError(`${arg} cannot be undefined (no default value)`);
     }
-  } else if (checkers[type](value)) {
+  } else if (typeCheckers[type](value)) {
     return value;
   } else {
     throwTypeError(arg, value, type);
