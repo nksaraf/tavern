@@ -1,6 +1,8 @@
 // @ts-ignore
 import _ from 'lodash';
-import { createCustomError, makeErrorMessage, TavernError, isErrorMessage } from '../src/error';
+import {
+  createCustomError, makeErrorMessage, TavernError, isErrorMessage
+} from '../src/error.ts';
 
 describe('create custom error', () => {
   test('with (name: string)', () => {
