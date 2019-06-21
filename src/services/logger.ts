@@ -14,11 +14,15 @@ export default class Logger extends Service {
     this.log = log;
   }
 
+  private truncate(text: string, chars: number = 48) {
+    return text.length > chars ? `${text.substring(0, chars - 3)}...` : text;
+  }
+
   private getRepr(value: any) : string {
-    if (value === undefined || value === null) return '?';
-    if (Array.isArray(value)) return `[${'.'.repeat(value.length)}]`;
-    if (_.isPlainObject(value)) return `{ ${Object.keys(value).join(' ')} }`;
-    else return value.toString();
+    if (value === undefined || value === null) return 'undefined';
+    if (_.isArray(value)) return `[${'.'.repeat(value.length)}]`;
+    if (_.isPlainObject(value)) return `{ ${this.truncate(Object.keys(value).join(' '))} }`;
+    else return this.truncate(value.toString());
   }
 
   private logError({ status, error }: LogErrorPayload, ctx: Dict, type: string) {

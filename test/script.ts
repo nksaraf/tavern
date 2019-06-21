@@ -1,5 +1,6 @@
-import tavern, { Logger, Parser, RequestHandler, ExpressAdapter } from '../src';
+import tavern, { Logger, Parser, RequestHandler, ExpressAdapter, utils } from '../src';
 import express from 'express';
+import _ from 'lodash';
 // import ParserObject from './parser';
 
 // const UserError = tavern.createCustomError('UserError');
@@ -28,7 +29,7 @@ tavern.register(Logger, Parser, RequestHandler, new ExpressAdapter(app));
 
 tavern.use('GET:USER', ({ id }, c, t, api) => {
   const numId = Number(id);
-  if (numId === 2) {
+  if (numId === 1) {
     return api.msg('USER', { name: 'Klay Thompson' });
   }
 });
@@ -62,7 +63,12 @@ const POST = (req: { method: string; }) => {
 
 const id = 1;
 (async () => {
-  await tavern.ask(GET({ path: '/user', body: { id } }));
+  // await tavern.ask(GET({ path: '/user', body: { id } }), undefined, { mode: 'all' });
+  console.log(await tavern.ask('GET:USER', { id }, {
+    mode: 'all',
+    transform: ({ payload }) => payload.name.length,
+    collect: (responses: number[]) => utils.msg('SUM', { sum: _.sum(responses) })
+  }));
 })();
 
 // tavern.listen();
