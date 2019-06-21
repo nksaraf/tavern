@@ -87,6 +87,7 @@ export default class Barkeep extends Registrar implements Messenger, Listener {
       const response = await this.askHandler(request, handlers[i]);
       if (response !== undefined) {
         finalResponse = transform(response);
+        break;
       }
     }
 
@@ -138,15 +139,6 @@ export default class Barkeep extends Registrar implements Messenger, Listener {
     }
   }
 
-  /**
-   * Tells all the subscribed listeners about the given message asyncronously
-   * and returns the same message to further be returned to answer requests.
-   *
-   * @param   message Type of the message or the whole {@link Message}
-   * @param   [payload]  Payload of the message
-   * @param   [ctx]      Context associated with the message
-   * @returns same
-   */
   tell(message: Message|string|void, payload: object = {}, ctx: object = {}) : Message {
     const event = this.msg(message, payload, ctx);
     if (event === undefined) {

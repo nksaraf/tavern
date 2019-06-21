@@ -63,12 +63,12 @@ const POST = (req: { method: string; }) => {
 
 const id = 1;
 (async () => {
-  // await tavern.ask(GET({ path: '/user', body: { id } }), undefined, { mode: 'all' });
-  console.log(await tavern.ask('GET:USER', { id }, {
-    mode: 'all',
-    transform: ({ payload }) => payload.name.length,
-    collect: (responses: number[]) => utils.msg('SUM', { sum: _.sum(responses) })
-  }));
+  console.log(await tavern.ask(GET({ path: '/user', body: { id } })));
+  // console.log(await tavern.ask('GET:USER', { id }, {
+  //   mode: 'all',
+  //   transform: ({ payload }) => payload.name.length,
+  //   collect: (responses: number[]) => utils.msg('SUM', { sum: _.sum(responses) })
+  // }));
 })();
 
 // tavern.listen();
