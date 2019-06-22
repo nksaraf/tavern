@@ -12,8 +12,12 @@ interface CollectFunc {
   (responses: any[]): Message | undefined
 }
 
+interface ListenerOptions extends Dict {
+  init?: boolean
+}
+
 export interface Listener {
-  listen: (this: Listener) => Promise<void>
+  listen: (this: Listener, options?: Dict) => Promise<void>
 }
 
 enum AskMode {
@@ -155,7 +159,18 @@ export default class Barkeep extends Registrar implements Messenger, Listener {
     );
   }
 
-  async listen() {
+  async listen({ init }: ListenerOptions = {}) {
+    if (init) {
+      const results = await this.ask('INIT', undefined, {
+        mode: 'all',
+        transform: (message) => !(this.isError(message)),
+        collect: (responses: boolean[]) => this.msg('INIT_RESULT', { result: responses.every((value) => value)})
+      });
+      if (!results.payload.result) {
+        this.throw(TavernError('Init failed'));
+        return;
+      }
+    }
     this.tell('LISTEN');
   }
 }

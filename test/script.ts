@@ -70,5 +70,4 @@ const id = 1;
   //   collect: (responses: number[]) => utils.msg('SUM', { sum: _.sum(responses) })
   // }));
 })();
-
-// tavern.listen();
+tavern.listen({ init: true });
