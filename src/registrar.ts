@@ -14,7 +14,7 @@ interface ServiceConstructor {
   new (): Service|Subscriptions
 }
 
-type Subscriber = Service | Subscriptions | ServiceConstructor | ServiceGenerator;
+export type Subscriber = Service | Subscriptions | ServiceConstructor | ServiceGenerator;
 
 export type AsyncHandler = (this: Messenger|any, payload: Dict, ctx: Dict, type: string, barkeep: Messenger) => Promise<HandlerResponse>;
 

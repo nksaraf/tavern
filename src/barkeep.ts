@@ -4,8 +4,9 @@ import { TavernError } from './error';
 import { Messenger, Message, Dict } from './messenger';
 import Registrar, { AsyncHandler } from './registrar';
 
+/** Transforms the response to  */
 interface TransformFunc {
-  (response: Message): any
+  (message: Message): any
 }
 
 interface CollectFunc {
@@ -44,18 +45,14 @@ export default class Barkeep extends Registrar implements Messenger, Listener {
   private async askHandler(request: Message, handler: AsyncHandler): Promise<Message|undefined> {
     let response;
     try {
-      response = this.msg(
-        await handler(request.payload, request.ctx, request.type, this.messenger),
-        undefined,
-        request.ctx
-      );
+      const handlerResult = await handler(request.payload, request.ctx, request.type, this.messenger);
+      response = this.msg(handlerResult, {}, request.ctx);
     } catch (error) {
-      response = this.error(error, undefined, request.ctx);
+      response = this.error(error, 400, request.ctx);
     }
-    if (response !== null && response !== undefined) {
-      if (!(response.ctx.private)) {
-        this.tell(response);
-      }
+
+    if (response !== undefined) {
+      this.tell(response);
     }
     return response;
   }
@@ -73,9 +70,9 @@ export default class Barkeep extends Registrar implements Messenger, Listener {
           responses.push(transform(response));
         }
       }
-      return this.tell(collect(responses), undefined, request.ctx);
+      return this.tell(collect(responses), {}, request.ctx);
     } catch (error) {
-      return this.throw(error, undefined, request.ctx);
+      return this.throw(error, 400, request.ctx);
     }
   }
 
@@ -85,17 +82,21 @@ export default class Barkeep extends Registrar implements Messenger, Listener {
     { transform }: AskOptions
   ): Promise<Message|undefined> {
     // TODO: add way to define what proper response is (throught context fields)
-    let finalResponse: Message|undefined;
-    let i;
-    for (i = 0; i < handlers.length; i += 1) {
-      const response = await this.askHandler(request, handlers[i]);
-      if (response !== undefined) {
-        finalResponse = transform(response);
-        break;
+    let finalResponse;
+    let i = 0;
+    let responseFound = false;
+    while (i < handlers.length) {
+      if (responseFound) {
+        this.askHandler(request, handlers[i]);
+      } else {
+        const response = await this.askHandler(request, handlers[i]);
+        if (response !== undefined) {
+          finalResponse = transform(response);
+          responseFound = true;
+        }
       }
+      i += 1;
     }
-
-    _.slice(handlers, i + 1).forEach((handler) => this.askHandler(request, handler));
     return finalResponse;
   }
 
@@ -159,17 +160,20 @@ export default class Barkeep extends Registrar implements Messenger, Listener {
     );
   }
 
+  private async init() {
+    const results = await this.ask('INIT', undefined, {
+      mode: 'all',
+      transform: (message) => !(this.isError(message)),
+      collect: (responses: boolean[]) => this.msg('INIT_RESULT', { result: responses.every((value) => value)})
+    });
+    if (!results.payload.result) {
+      this.throw(TavernError('Init failed'));
+    }
+  }
+
   async listen({ init }: ListenerOptions = {}) {
     if (init) {
-      const results = await this.ask('INIT', undefined, {
-        mode: 'all',
-        transform: (message) => !(this.isError(message)),
-        collect: (responses: boolean[]) => this.msg('INIT_RESULT', { result: responses.every((value) => value)})
-      });
-      if (!results.payload.result) {
-        this.throw(TavernError('Init failed'));
-        return;
-      }
+
     }
     this.tell('LISTEN');
   }

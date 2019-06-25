@@ -6,32 +6,26 @@
   },
   "parser": "@typescript-eslint/parser",
   "extends": [
-    "airbnb-base",
-    "plugin:@typescript-eslint/recommended"
+    "airbnb",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:import/typescript",
+    "plugin:prettier/recommended",
+    "prettier/@typescript-eslint",
+    "prettier/react"
   ],
-  "globals": {
-    "Atomics": "readonly",
-    "SharedArrayBuffer": "readonly"
-  },
   "parserOptions": {
     "ecmaVersion": 2018,
     "sourceType": "module",
     "project": "./tsconfig.json"
   },
   "rules": {
-    "arrow-parens": [
+    "@typescript-eslint/explicit-member-accessibility": "off",
+    "prettier/prettier": [
       "error",
-      "always"
-    ],
-    "no-else-return": 0,
-    "no-await-in-loop": 0,
-    "no-restricted-syntax": 0,
-    "comma-dangle": 0,
-    "no-unused-vars": 1,
-    "indent": "off",
-    "@typescript-eslint/indent": [
-      "error",
-      2
+      {
+        "singleQuote": true,
+        "endOfLine": "lf"
+      }
     ]
   },
   "plugins": [

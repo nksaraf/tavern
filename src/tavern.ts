@@ -6,30 +6,6 @@ import Barkeep from './barkeep';
 
 import _ from 'lodash';
 
-// interface TavernOptions {
-//   mode?: string;
-//   logger?: boolean;
-// }
-
-// const defaultOptions = {
-//   mode: 'local',
-//   logger: true
-// }
-
-/**
- * Factory function to create an instance of {@link Barkeep}
- * @return barkeep
- */
-// function tavern(options: TavernOptions = {}) : Barkeep {
-//   const args = _.defaults(options, defaultOptions);
-//   if (args.mode === 'local') {
-//     const barkeep = new LocalBarkeep();
-//     return barkeep;
-//   } else {
-//     throw new TavernError('Invalid mode');
-//   }
-// }
-
 export const tavern = new Barkeep();
 
 export const utils = {

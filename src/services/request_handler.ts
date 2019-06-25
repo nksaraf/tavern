@@ -1,6 +1,6 @@
+import http from 'http';
 import { createCustomError, Service } from '../tavern';
 import { Message } from '../types';
-import http from 'http';
 
 interface RequestHandlerPayload {
   req?: {
@@ -9,7 +9,7 @@ interface RequestHandlerPayload {
     body?: object;
     query?: object;
     headers?: http.IncomingHttpHeaders;
-  }
+  };
 }
 
 const InvalidRequestError = createCustomError('InvalidRequestError');
@@ -29,9 +29,9 @@ export default class RequestHandler extends Service {
     const action = { type, payload, ctx: { ...ctx, req } };
     const response = await this.ask(action);
     return this.msg('RESPONSE', response, { request: action });
-  }
+  };
 
   subscriptions = {
-    'HANDLE_REQUEST': this.handleRequest
-  }
+    HANDLE_REQUEST: this.handleRequest
+  };
 }
