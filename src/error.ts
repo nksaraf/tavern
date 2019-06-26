@@ -21,7 +21,11 @@ export function createError<T extends string>(
     code.INTERNAL_SERVER_ERROR
   );
 
-  const errorConstructor = (message: string, ctx = {}, status = baseStatus) => {
+  const errorConstructor = (
+    message: string = name,
+    ctx = {},
+    status = baseStatus
+  ) => {
     const error = new Error(validate.string(message, 'message', name));
     const mixin = {
       name,
