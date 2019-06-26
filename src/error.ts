@@ -14,29 +14,26 @@ export function createError<T extends string>(
   name: T,
   status: number = code.INTERNAL_SERVER_ERROR
 ) {
-  validate(name, 'string', 'name');
-  const baseStatus = validate(
+  validate.string(name, 'name');
+  const baseStatus = validate.number(
     status,
-    'number',
     'status',
     code.INTERNAL_SERVER_ERROR
   );
 
-  const errorConstructor = (message = name, ctx = {}, status = baseStatus) => {
-    const error = new Error(validate(message, 'string', 'message', name));
-    status = validate(status, 'number', 'status', baseStatus);
-    ctx = Object.assign({}, validate(ctx, 'object', 'ctx', {}));
-
-    const customError: NamedError<T> = Object.assign(error, {
+  const errorConstructor = (message: string, ctx = {}, status = baseStatus) => {
+    const error = new Error(validate.string(message, 'message', name));
+    const mixin = {
       name,
-      status,
-      ctx
-    });
+      status: validate.number(status, 'status', baseStatus),
+      ctx: Object.assign({}, validate.object(ctx, 'ctx', {}))
+    };
+    const namedError: NamedError<T> = Object.assign(error, mixin);
 
     if (Error.captureStackTrace) {
-      Error.captureStackTrace(customError, errorConstructor);
+      Error.captureStackTrace(namedError, errorConstructor);
     }
-    return customError;
+    return namedError;
   };
 
   errorConstructor.prototype = new Error();
@@ -56,7 +53,7 @@ export const makeErrorMessage = <T extends string>(
   if (typeof error === 'string') {
     return makeErrorMsgFromString(error, status, ctx);
   }
-  if (validate(error, 'object', 'error')) {
+  if (validate.object(error, 'error')) {
     return makeErrorMsgFromError(error, status, ctx);
   }
   throw argError('error', error, 'Error|string');
@@ -69,10 +66,10 @@ const makeErrorMsgFromString = (
 ) => ({
   type: 'ERROR',
   payload: {
-    error: validate(error, 'string', 'error'),
-    status: validate(status, 'number', 'status', code.INTERNAL_SERVER_ERROR)
+    error: validate.string(error, 'error'),
+    status: validate.number(status, 'status', code.INTERNAL_SERVER_ERROR)
   },
-  ctx: Object.assign({}, validate(ctx, 'object', 'ctx', {}))
+  ctx: Object.assign({}, validate.object(ctx, 'ctx', {}))
 });
 
 const makeErrorMsgFromError = <T extends string>(
@@ -81,20 +78,19 @@ const makeErrorMsgFromError = <T extends string>(
   ctx: object
 ) => ({
   type: _.snakeCase(
-    validate(error.name, 'string', 'error.name', 'ERROR')
+    validate.string(error.name, 'error.name', 'ERROR')
   ).toUpperCase(),
   payload: {
-    error: validate(error.message, 'string', 'error.message'),
-    status: validate(
+    error: validate.string(error.message, 'error.message'),
+    status: validate.number(
       (error as NamedError<T>).status,
-      'number',
       'error.status',
-      validate(status, 'number', 'status', code.INTERNAL_SERVER_ERROR)
+      validate.number(status, 'status', code.INTERNAL_SERVER_ERROR)
     )
   },
   ctx: Object.assign(
     {},
-    validate(ctx, 'object', 'ctx', {}),
-    validate((error as NamedError<T>).ctx, 'object', 'error.ctx', {})
+    validate.object(ctx, 'ctx', {}),
+    validate.object((error as NamedError<T>).ctx, 'error.ctx', {})
   )
 });
