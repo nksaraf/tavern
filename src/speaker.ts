@@ -74,18 +74,15 @@ export interface Speaker {
     status?: number,
     ctx?: object
   ) => CompleteMessage;
-
   error: (
     error: Error | string,
     status?: number,
     ctx?: object
   ) => CompleteMessage;
-
   msg: (
     message: Message | string | void,
     payload?: object,
     ctx?: object
   ) => Message | undefined;
-
   isError: (message: Message | string) => boolean;
 }

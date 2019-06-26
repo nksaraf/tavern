@@ -73,7 +73,8 @@
         "error",
         {
           "singleQuote": true,
-          "endOfLine": "lf"
+          "endOfLine": "lf",
+          "printWidth": 100
         }
       ]
     },

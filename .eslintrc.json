@@ -24,12 +24,10 @@
       "error",
       {
         "singleQuote": true,
-        "endOfLine": "lf"
+        "endOfLine": "lf",
+        "printWidth": 100
       }
     ]
   },
-  "plugins": [
-    "@typescript-eslint",
-    "jest"
-  ]
+  "plugins": ["@typescript-eslint", "jest"]
 }
