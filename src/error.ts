@@ -15,22 +15,18 @@ export function createError<T extends string>(
   status: number = code.INTERNAL_SERVER_ERROR
 ) {
   validate.string(name, 'name');
-  const baseStatus = validate.number(
-    status,
-    'status',
-    code.INTERNAL_SERVER_ERROR
-  );
+  const baseStatus = validate.number(status, 'status');
 
   const errorConstructor = (
     message: string = name,
     ctx = {},
     status = baseStatus
   ) => {
-    const error = new Error(validate.string(message, 'message', name));
+    const error = new Error(validate.string(message, 'message'));
     const mixin = {
       name,
-      status: validate.number(status, 'status', baseStatus),
-      ctx: Object.assign({}, validate.object(ctx, 'ctx', {}))
+      status: validate.number(status, 'status'),
+      ctx: Object.assign({}, validate.object(ctx, 'ctx'))
     };
     const namedError: NamedError<T> = Object.assign(error, mixin);
 
@@ -65,21 +61,21 @@ export const makeErrorMessage = <T extends string>(
 
 const makeErrorMsgFromString = (
   error: string,
-  status?: number,
-  ctx?: object
+  status: number = code.INTERNAL_SERVER_ERROR,
+  ctx: object = {}
 ) => ({
   type: 'ERROR',
   payload: {
     error: validate.string(error, 'error'),
-    status: validate.number(status, 'status', code.INTERNAL_SERVER_ERROR)
+    status: validate.number(status, 'status')
   },
-  ctx: Object.assign({}, validate.object(ctx, 'ctx', {}))
+  ctx: Object.assign({}, validate.object(ctx, 'ctx'))
 });
 
 const makeErrorMsgFromError = <T extends string>(
   error: Error | NamedError<T>,
-  status: number,
-  ctx: object
+  status: number = code.INTERNAL_SERVER_ERROR,
+  ctx: object = {}
 ) => ({
   type: _.snakeCase(
     validate.string(error.name, 'error.name', 'ERROR')
@@ -89,12 +85,12 @@ const makeErrorMsgFromError = <T extends string>(
     status: validate.number(
       (error as NamedError<T>).status,
       'error.status',
-      validate.number(status, 'status', code.INTERNAL_SERVER_ERROR)
+      validate.number(status, 'status')
     )
   },
   ctx: Object.assign(
     {},
-    validate.object(ctx, 'ctx', {}),
+    validate.object(ctx, 'ctx'),
     validate.object((error as NamedError<T>).ctx, 'error.ctx', {})
   )
 });
