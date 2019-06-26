@@ -1,38 +1,55 @@
-import { createCustomError, isErrorMessage, makeErrorMessage } from './error';
-import { match } from './matcher';
-import { Message, Dict, Messenger, makeMessage } from './messenger';
+import { createError, isError, makeErrorMessage } from './error';
+import { match } from './glob';
+import {
+  Message,
+  Dict,
+  Speaker,
+  makeMessage,
+  CompleteMessage
+} from './speaker';
 
-export type HandlerResponse = Message|string|void;
+export type Response = Message | string | void;
+
 export type Handler = (
-  this: Messenger|any, payload: Dict, ctx: Dict, type: string, barkeep: Messenger
-) => HandlerResponse|Promise<HandlerResponse>
+  this: Speaker | any,
+  payload: Dict,
+  ctx: Dict,
+  type: string,
+  barkeep: Speaker
+) => Response | Promise<Response>;
 
 export interface Subscriptions {
-  [pattern: string]: Handler | Handler[]
+  [pattern: string]: Handler | Handler[];
 }
 
-export interface Service {
-  subscriptions: Subscriptions
+export interface Subscriber {
+  subscriptions: Subscriptions;
 }
 
-const NotRegisteredError = createCustomError('NotRegisteredError');
+const NotRegistered = createError('NotRegistered');
 
-export abstract class Service implements Messenger {
+export abstract class Service implements Speaker, Subscriber {
   subscriptions: Subscriptions = {};
+
   msg = makeMessage;
-  isError = isErrorMessage;
-  match = match;
-  error = makeErrorMessage as (error: Error|string, status?: number, ctx?: object) => Message;
 
-  async ask(message: Message|string|void, payload?: object, ctx?: object) {
-    return makeErrorMessage(NotRegisteredError());
+  isError = isError;
+
+  error = makeErrorMessage as (
+    error: Error | string,
+    status?: number,
+    ctx?: object
+  ) => CompleteMessage;
+
+  async ask(message: Message | string | void, payload?: object, ctx?: object) {
+    return makeErrorMessage(NotRegistered());
   }
 
-  tell(message: Message|string|void, payload?: object, ctx?: object) {
-    return makeErrorMessage(NotRegisteredError());
+  tell(message: Message | string | void, payload?: object, ctx?: object) {
+    return makeErrorMessage(NotRegistered());
   }
 
-  throw(error: Error|string, status?: number, ctx?: object) {
-    return makeErrorMessage(NotRegisteredError());
+  throw(error: Error | string, status?: number, ctx?: object) {
+    return makeErrorMessage(NotRegistered());
   }
 }

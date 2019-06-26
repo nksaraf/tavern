@@ -22,9 +22,9 @@ const makeMessageFromString = (
   payload: object = {},
   ctx: object = {}
 ) => ({
-  type: validate(message, 'string', 'message').toUpperCase(),
-  payload: Object.assign({}, validate(payload, 'object', 'payload', {})),
-  ctx: Object.assign({}, validate(ctx, 'object', 'ctx', {}))
+  type: validate.string(message, 'message').toUpperCase(),
+  payload: Object.assign({}, validate.object(payload, 'payload')),
+  ctx: Object.assign({}, validate.object(ctx, 'ctx'))
 });
 
 const makeMessageFromObject = (
@@ -32,17 +32,13 @@ const makeMessageFromObject = (
   payload: object = {},
   ctx: object = {}
 ) => ({
-  type: validate(message.type, 'string', 'message.type').toUpperCase(),
+  type: validate.string(message.type, 'message.type').toUpperCase(),
   payload: Object.assign(
     {},
     payload,
-    validate(message.payload, 'object', 'message.payload', {})
+    validate.object(message.payload, 'message.payload', {})
   ),
-  ctx: Object.assign(
-    {},
-    ctx,
-    validate(message.ctx, 'object', 'message.ctx', {})
-  )
+  ctx: Object.assign({}, ctx, validate.object(message.ctx, 'message.ctx', {}))
 });
 
 export function makeMessage(
@@ -51,29 +47,29 @@ export function makeMessage(
   ctx: object = {}
 ): CompleteMessage | undefined {
   if (message === undefined) return undefined;
-  if (message === null) throw argError('message', message, 'message|string?');
+  if (message === null) throw argError('message', message, 'message|string');
   return _.isString(message)
     ? makeMessageFromString(message, payload, ctx)
     : makeMessageFromObject(message, payload, ctx);
 }
 
-export interface Talker {
+export interface Speaker {
   ask: (
-    this: Talker,
+    this: Speaker,
     message: Message | string | void,
     payload?: object,
     ctx?: object
   ) => Promise<CompleteMessage>;
 
   tell: (
-    this: Talker,
+    this: Speaker,
     message: Message | string | void,
     payload?: object,
     ctx?: object
   ) => CompleteMessage;
 
   throw: (
-    this: Talker,
+    this: Speaker,
     error: Error | string,
     status?: number,
     ctx?: object
