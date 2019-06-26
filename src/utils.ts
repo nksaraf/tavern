@@ -1,4 +1,10 @@
 import _ from 'lodash';
+import { createError } from './error';
+
+const InvalidArgument = createError('InvalidArgument');
+
+export const argError = (arg: string, value: any, type: string) =>
+  InvalidArgument(`${arg}=${value} is not of type: ${type}`);
 
 const isNonArrayObject = (value: any) =>
   _.isObjectLike(value) && !_.isArrayLikeObject(value);
@@ -12,31 +18,28 @@ const validators: { [key: string]: (value?: any) => boolean } = {
   function: _.isFunction
 };
 
-export const argError = (arg: string, value: any, type: string) =>
-  new TypeError(`${arg}=${value} is not of type: ${type}`);
+export const validate: {
+  [key: string]: <T>(value: T | undefined, name: string, def?: T) => T;
+} = {};
 
-export function validate<T>(value: T, type: string, arg: string, def?: T): T {
-  if (!_.isString(type) || !(type in validators)) {
-    throw argError(
-      'type',
-      type,
-      `string {${Object.keys(validators).join(', ')}}`
-    );
-  } else if (!_.isString(arg)) {
-    throw argError('arg', arg, 'string');
-  }
-
-  if (validators[type](value)) {
-    return value;
-  }
-
-  if (_.isUndefined(value)) {
-    if (validators[type](def)) {
-      return def as T;
+for (let type in validators) {
+  validate[type] = <T>(value: T | undefined, name: string = 'arg', def?: T) => {
+    if (!(typeof name === 'string')) {
+      throw argError('name', name, 'string');
     }
-    throw new TypeError(`${arg} cannot be undefined (no default value)`);
-  }
 
-  throw argError(arg, value, type);
-  return def as T;
+    if (validators[type](value)) {
+      return value as T;
+    }
+
+    if (_.isUndefined(value)) {
+      if (validators[type](def)) {
+        return def as T;
+      }
+      throw new TypeError(`${name} cannot be undefined (no default value)`);
+    }
+
+    throw argError(name, value, type);
+    return def as T;
+  };
 }
