@@ -13,7 +13,7 @@ const validators: { [key: string]: (value?: any) => boolean } = {
   object: isNonArrayObject,
   number: _.isNumber,
   string: _.isString,
-  message: ({ type, payload, ctx }) =>
+  message: ({ type, payload = {}, ctx = {} }) =>
     _.isString(type) && isNonArrayObject(payload) && isNonArrayObject(ctx),
   function: _.isFunction
 };
