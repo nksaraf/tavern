@@ -1,0 +1,625 @@
+[
+  {
+    "id": "users_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"users\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "users_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"users\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "users_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_users_updated_at\" BEFORE UPDATE ON \"public\".\"users\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_users_updated_at\" ON \"public\".\"users\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "sessions_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"sessions\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "sessions_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"sessions\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "sessions_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_sessions_updated_at\" BEFORE UPDATE ON \"public\".\"sessions\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_sessions_updated_at\" ON \"public\".\"sessions\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "insert_enum_value_user_roles_ADMIN",
+    "type": "run_sql",
+    "args": {
+      "sql": "INSERT INTO \"public\".\"user_roles\"(\"value\") VALUES('ADMIN');"
+    }
+  },
+  {
+    "id": "insert_enum_value_user_roles_STUDENT",
+    "type": "run_sql",
+    "args": {
+      "sql": "INSERT INTO \"public\".\"user_roles\"(\"value\") VALUES('STUDENT');"
+    }
+  },
+  {
+    "id": "insert_enum_value_user_roles_TEACHER",
+    "type": "run_sql",
+    "args": {
+      "sql": "INSERT INTO \"public\".\"user_roles\"(\"value\") VALUES('TEACHER');"
+    }
+  },
+  {
+    "id": "auth_services_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"auth_services\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "auth_services_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"auth_services\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "auth_services_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_auth_services_updated_at\" BEFORE UPDATE ON \"public\".\"auth_services\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_auth_services_updated_at\" ON \"public\".\"auth_services\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "custom_function_profile_user_name_v1",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"profile_user_name\"(\"profile\" \"profiles\")\n  RETURNS text AS $$\n      SELECT CASE\n            WHEN \"profile\".\"use_pen_name\" AND \"profile\".\"pen_name\" is NOT NULL THEN \"profile\".\"pen_name\"\n            ELSE (\"profile\".\"first_name\" || ' ' || \"profile\".\"last_name\")\n          END AS username\n  $$ LANGUAGE sql STABLE;"
+    }
+  },
+  {
+    "id": "profiles_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"profiles\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "profiles_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"profiles\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "profiles_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_profiles_updated_at\" BEFORE UPDATE ON \"public\".\"profiles\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_profiles_updated_at\" ON \"public\".\"profiles\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "schools_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"schools\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "schools_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"schools\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "schools_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_schools_updated_at\" BEFORE UPDATE ON \"public\".\"schools\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_schools_updated_at\" ON \"public\".\"schools\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "subject_areas_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"subject_areas\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "subject_areas_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"subject_areas\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "subject_areas_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_subject_areas_updated_at\" BEFORE UPDATE ON \"public\".\"subject_areas\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_subject_areas_updated_at\" ON \"public\".\"subject_areas\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "professional_areas_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"professional_areas\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "professional_areas_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"professional_areas\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "professional_areas_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_professional_areas_updated_at\" BEFORE UPDATE ON \"public\".\"professional_areas\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_professional_areas_updated_at\" ON \"public\".\"professional_areas\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "courses_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"courses\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "courses_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"courses\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "courses_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_courses_updated_at\" BEFORE UPDATE ON \"public\".\"courses\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_courses_updated_at\" ON \"public\".\"courses\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "semesters_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"semesters\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "semesters_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"semesters\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "semesters_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_semesters_updated_at\" BEFORE UPDATE ON \"public\".\"semesters\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_semesters_updated_at\" ON \"public\".\"semesters\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "communities_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"communities\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "communities_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"communities\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "communities_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_communities_updated_at\" BEFORE UPDATE ON \"public\".\"communities\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_communities_updated_at\" ON \"public\".\"communities\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "community_users_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"community_users\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "community_users_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"community_users\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "community_users_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_community_users_updated_at\" BEFORE UPDATE ON \"public\".\"community_users\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_community_users_updated_at\" ON \"public\".\"community_users\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "insert_enum_value_community_types_COURSE",
+    "type": "run_sql",
+    "args": {
+      "sql": "INSERT INTO \"public\".\"community_types\"(\"value\") VALUES('COURSE');"
+    }
+  },
+  {
+    "id": "insert_enum_value_community_types_SUBJECT_AREA",
+    "type": "run_sql",
+    "args": {
+      "sql": "INSERT INTO \"public\".\"community_types\"(\"value\") VALUES('SUBJECT_AREA');"
+    }
+  },
+  {
+    "id": "insert_enum_value_community_types_PROFESSIONAL_AREA",
+    "type": "run_sql",
+    "args": {
+      "sql": "INSERT INTO \"public\".\"community_types\"(\"value\") VALUES('PROFESSIONAL_AREA');"
+    }
+  },
+  {
+    "id": "custom_function_post_upvoted_by_me",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"post_upvoted_by_me\"(\"post\" \"posts\", \"hasura_session\" json)\n  RETURNS boolean AS $$\n      SELECT EXISTS (\n          SELECT 1\n          FROM \"upvotes\" upvote\n          WHERE \n            upvote.\"user_profile_id\" = (CAST (hasura_session ->> 'x-hasura-profile-id' as INT)) \n            AND upvote.\"post_id\" = \"post\".\"post_id\"\n      );\n  $$ LANGUAGE sql STABLE;"
+    }
+  },
+  {
+    "id": "contraint_posts_alteast_one_type_v1",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE public.\"posts\"\nADD CONSTRAINT contraint_posts_alteast_one_type CHECK (num_nonnulls(\"upload_id\", \"answer_id\", \"question_id\", \"announcement_id\") = 1);"
+    }
+  },
+  {
+    "id": "posts_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"posts\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "posts_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"posts\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "posts_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_posts_updated_at\" BEFORE UPDATE ON \"public\".\"posts\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_posts_updated_at\" ON \"public\".\"posts\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "community_posts_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"community_posts\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "community_posts_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"community_posts\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "community_posts_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_community_posts_updated_at\" BEFORE UPDATE ON \"public\".\"community_posts\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_community_posts_updated_at\" ON \"public\".\"community_posts\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "questions_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"questions\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "questions_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"questions\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "questions_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_questions_updated_at\" BEFORE UPDATE ON \"public\".\"questions\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_questions_updated_at\" ON \"public\".\"questions\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "answers_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"answers\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "answers_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"answers\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "answers_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_answers_updated_at\" BEFORE UPDATE ON \"public\".\"answers\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_answers_updated_at\" ON \"public\".\"answers\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "uploads_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"uploads\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "uploads_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"uploads\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "uploads_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_uploads_updated_at\" BEFORE UPDATE ON \"public\".\"uploads\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_uploads_updated_at\" ON \"public\".\"uploads\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "responses_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"responses\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "responses_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"responses\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "responses_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_responses_updated_at\" BEFORE UPDATE ON \"public\".\"responses\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_responses_updated_at\" ON \"public\".\"responses\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "announcements_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"announcements\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "announcements_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"announcements\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "announcements_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_announcements_updated_at\" BEFORE UPDATE ON \"public\".\"announcements\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_announcements_updated_at\" ON \"public\".\"announcements\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "insert_enum_value_post_types_QUESTION",
+    "type": "run_sql",
+    "args": {
+      "sql": "INSERT INTO \"public\".\"post_types\"(\"value\") VALUES('QUESTION');"
+    }
+  },
+  {
+    "id": "insert_enum_value_post_types_ANSWER",
+    "type": "run_sql",
+    "args": {
+      "sql": "INSERT INTO \"public\".\"post_types\"(\"value\") VALUES('ANSWER');"
+    }
+  },
+  {
+    "id": "insert_enum_value_post_types_UPLOAD",
+    "type": "run_sql",
+    "args": {
+      "sql": "INSERT INTO \"public\".\"post_types\"(\"value\") VALUES('UPLOAD');"
+    }
+  },
+  {
+    "id": "insert_enum_value_post_types_ANNOUNCEMENT",
+    "type": "run_sql",
+    "args": {
+      "sql": "INSERT INTO \"public\".\"post_types\"(\"value\") VALUES('ANNOUNCEMENT');"
+    }
+  },
+  {
+    "id": "upvotes_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"upvotes\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "upvotes_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"upvotes\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "upvotes_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_upvotes_updated_at\" BEFORE UPDATE ON \"public\".\"upvotes\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_upvotes_updated_at\" ON \"public\".\"upvotes\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "downvotes_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"downvotes\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "downvotes_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"downvotes\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "downvotes_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_downvotes_updated_at\" BEFORE UPDATE ON \"public\".\"downvotes\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_downvotes_updated_at\" ON \"public\".\"downvotes\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "insert_enum_value_note_categories_LECTURE_NOTES",
+    "type": "run_sql",
+    "args": {
+      "sql": "INSERT INTO \"public\".\"note_categories\"(\"value\") VALUES('LECTURE_NOTES');"
+    }
+  },
+  {
+    "id": "insert_enum_value_note_categories_READING_NOTES",
+    "type": "run_sql",
+    "args": {
+      "sql": "INSERT INTO \"public\".\"note_categories\"(\"value\") VALUES('READING_NOTES');"
+    }
+  },
+  {
+    "id": "insert_enum_value_note_categories_STUDY_GUIDE",
+    "type": "run_sql",
+    "args": {
+      "sql": "INSERT INTO \"public\".\"note_categories\"(\"value\") VALUES('STUDY_GUIDE');"
+    }
+  },
+  {
+    "id": "custom_function_note_is_added_to_my_library",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"note_is_added_to_my_library\"(\"note\" \"notes\", \"hasura_session\" json)\n  RETURNS boolean AS $$\n      SELECT EXISTS (\n          SELECT 1\n          FROM \"note_users\" noteUser\n          WHERE \n            noteUser.\"user_profile_id\" = (CAST (hasura_session ->> 'x-hasura-profile-id' as INT)) \n            AND noteUser.\"note_id\" = \"note\".\"note_id\"\n      );\n  $$ LANGUAGE sql STABLE;"
+    }
+  },
+  {
+    "id": "notes_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"notes\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "notes_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"notes\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "notes_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_notes_updated_at\" BEFORE UPDATE ON \"public\".\"notes\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_notes_updated_at\" ON \"public\".\"notes\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "note_users_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"note_users\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "note_users_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"note_users\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "note_users_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_note_users_updated_at\" BEFORE UPDATE ON \"public\".\"note_users\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_note_users_updated_at\" ON \"public\".\"note_users\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "notifications_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"notifications\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "notifications_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"notifications\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "notifications_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_notifications_updated_at\" BEFORE UPDATE ON \"public\".\"notifications\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_notifications_updated_at\" ON \"public\".\"notifications\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  },
+  {
+    "id": "notification_preferences_updated_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"notification_preferences\" ALTER COLUMN \"updated_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "notification_preferences_created_at_type_timestamptz",
+    "type": "run_sql",
+    "args": {
+      "sql": "ALTER TABLE \"public\".\"notification_preferences\" ALTER COLUMN \"created_at\" TYPE timestamptz;"
+    }
+  },
+  {
+    "id": "notification_preferences_updated_at_trigger",
+    "type": "run_sql",
+    "args": {
+      "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_current_timestamp_updated_at\"() \n      RETURNS TRIGGER AS $$ \n        DECLARE  _new record;\n        BEGIN  \n          _new := NEW;  \n          _new.\"updated_at\" = NOW();  \n          RETURN _new;\n        END; \n      $$ LANGUAGE plpgsql;\n      CREATE TRIGGER \"set_public_notification_preferences_updated_at\" BEFORE UPDATE ON \"public\".\"notification_preferences\" \n      FOR EACH ROW EXECUTE PROCEDURE \"public\".\"set_current_timestamp_updated_at\"();\n      COMMENT ON TRIGGER \"set_public_notification_preferences_updated_at\" ON \"public\".\"notification_preferences\" IS 'trigger to set value of column \"updated_at\" to current timestamp on row update';"
+    }
+  }
+]

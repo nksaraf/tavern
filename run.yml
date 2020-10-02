@@ -1,1 +1,0 @@
-watch: nodemon --watch src/index.tsx --exec npm run compile

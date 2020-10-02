@@ -1,103 +1,25 @@
 {
   "name": "tavern",
-  "version": "0.2.3",
-  "description": "WIP Super simple framework for service-based architecture in monolithic servers",
-  "main": "src/index.ts",
-  "types": "tavern/index.d.ts",
-  "files": [
-    "tavern/**/*"
-  ],
-  "scripts": {
-    "config": "cockpit",
-    "build": "npm run clean && npm run compile",
-    "test": "jest --collectCoverage --verbose",
-    "deploy:local": "npm run build && npm link",
-    "test:script": "ts-node test/script.ts",
-    "type:check": "tsc --noEmit",
-    "coverage": "open coverage/lcov-report/index.html",
-    "test:min": "jest",
-    "version": "npm run build && git add -A .",
-    "postversion": "git push && git push --tags",
-    "docs": "npx typedoc ./src && npm run docs:open",
-    "docs:open": "open docs/index.html",
-    "docs:clean": "rm -rf docs",
-    "watch": "nodemon --exec npm run ",
-    "clean": "rm -rf tavern && mkdir tavern",
-    "compile": "tsc --declaration --outDir tavern",
-    "lint": "npx eslint src/**/*",
-    "lint:fix": "npm run lint --fix"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nksaraf/tavern.git"
-  },
-  "bugs": {
-    "url": "https://github.com/nksaraf/tavern/issues"
-  },
-  "homepage": "https://github.com/nksaraf/tavern#readme",
-  "author": "Nikhil Saraf <nsaraf98@gmail.com>",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Nikhil Saraf",
+  "license": "MIT",
   "dependencies": {
-    "chalk": "*",
-    "lodash": "^4.17.11",
-    "merge-descriptors": "^1.0.1",
-    "multimatch": "^4.0.0",
-    "parseurl": "^1.3.3",
-    "express": "^4.17.1"
+    "create-hook-context": "^1.0.0",
+    "dotenv": "^8.2.0",
+    "fast-deep-equal": "^3.1.3",
+    "ink": "^3.0.6",
+    "ink-spinner": "^4.0.1",
+    "jotai": "^0.7.3",
+    "magiql": "^0.0.9",
+    "react": "^0.0.0-experimental-94c0244ba",
+    "react-error-boundary": "^3.0.2",
+    "sucrase": "^3.15.0",
+    "use-asset": "^0.1.1",
+    "yaml": "^1.10.0"
   },
   "devDependencies": {
-    "@types/body-parser": "^1.17.0",
-    "@types/express": "^4.17.0",
-    "@types/jest": "^24.0.14",
-    "@types/lodash": "^4.14.134",
-    "@types/merge-descriptors": "^1.0.1",
-    "@types/morgan": "^1.7.35",
-    "@types/multimatch": "^2.1.3",
-    "@types/node": "^12.0.7",
-    "@types/parseurl": "^1.3.1",
-    "@typescript-eslint/eslint-plugin": "^1.11.0",
-    "@typescript-eslint/parser": "^1.11.0",
-    "dependency-cruiser": "^4.23.0",
-    "eslint": "^5.16.0",
-    "eslint-config-airbnb": "^17.1.0",
-    "eslint-config-airbnb-base": "^13.1.0",
-    "eslint-config-prettier": "^5.1.0",
-    "eslint-plugin-import": "^2.18.0",
-    "eslint-plugin-jest": "^22.7.1",
-    "eslint-plugin-jsx-a11y": "^6.2.1",
-    "eslint-plugin-prettier": "^3.1.0",
-    "eslint-plugin-react": "^7.14.2",
-    "http": "0.0.0",
-    "husky": "^2.5.0",
-    "jest": "^24.8.0",
-    "nodemon": "^1.19.1",
-    "prettier": "^1.18.2",
-    "pretty-quick": "^1.11.1",
-    "ts-jest": "^24.0.2",
-    "typescript": "^3.5.1"
-  },
-  "nodemonConfig": {
-    "ext": "js,ts",
-    "watch": [
-      "src/**/*",
-      "test/*"
-    ]
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "coverageReporters": [
-      "text",
-      "lcov"
-    ],
-    "coverageDirectory": "coverage",
-    "preset": "ts-jest/presets/js-with-ts"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "pretty-quick --staged"
-    }
-  },
-  "prettier": {
-    "singleQuote": true,
-    "endOfLine": "lf"
+    "@types/node": "^14.11.2",
+    "@types/react": "^16.9.49"
   }
 }
