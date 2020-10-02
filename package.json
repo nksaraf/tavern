@@ -12,7 +12,7 @@
     "ink-spinner": "^4.0.1",
     "jotai": "^0.7.3",
     "magiql": "^0.0.9",
-    "react": "^0.0.0-experimental-94c0244ba",
+    "react": "^0.14.0",
     "react-error-boundary": "^3.0.2",
     "sucrase": "^3.15.0",
     "use-asset": "^0.1.1",
