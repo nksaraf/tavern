@@ -8,7 +8,7 @@ export type PromiseCache = {
   response?: any;
 };
 
-export interface PromiseFunction<T | undefined, V> {
+export interface PromiseFunction<T, V> {
   (props?: T): Promise<V>;
 }
 
