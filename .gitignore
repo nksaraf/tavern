@@ -7,12 +7,13 @@ yarn-error.log*
 
 .DS_Store
 
-hasura
-backend
+dist
+
 
 # Runtime data
 pids
 *.pid
+.tavern
 *.seed
 *.pid.lock
 
@@ -65,8 +66,8 @@ typings/
 # next.js build output
 .next
 
-tavern
 docs
+yarn.lock
 .nyc_output
 coverage
 deps

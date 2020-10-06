@@ -1,115 +1,276 @@
 import { Text } from "ink";
 import React from "react";
-import { useAtom, atom } from "jotai";
-import { useUpdateAtom } from "jotai/utils.cjs";
 import * as fs from "fs";
-import { atomFamily } from "./jotai";
-import { wait } from "./index";
+const mkdirp = require("mkdirp");
+import pathUtils from "path";
+import { createContext } from "create-hook-context";
+import { useReducerWithEffects } from "usables/useReducerWithEffects";
+import { usePersistentState } from "./usePersistentState";
+import { useCleanup } from "./PackageJson";
+import { useValueRef } from "usables/useValueRef";
 
-export const fileAtom = atomFamily<
-  string,
-  {
-    contents: string | undefined;
-    status: "empty" | "filled" | "writing" | "written";
-  }
->((path: string) => ({
-  contents: undefined,
-  status: "empty" as const,
-}));
-const readFileAtom = atomFamily(
-  (path: string) => async (
-    get
-  ): Promise<{
-    contents: string | undefined;
-    status: "empty" | "filled" | "writing" | "written";
-  }> => {
-    const value = get(fileAtom(path));
-    if (value.status !== "empty") {
-      return value;
-    }
-    try {
-      const result = fs.readFileSync(path).toString();
-      return { contents: result, status: "filled" };
-    } catch (e) {
-      return { contents: undefined, status: "empty" };
-    }
-  },
-  (path: string) => (get, set, update) => {
-    set(fileAtom(path), update);
-  }
-);
+export const FileSystemContext = createContext(({}: {}) => {
+  const [filesystem, setFileSystem, oldFileSystem] = usePersistentState(
+    "filesystem",
+    {}
+  );
+  const fileStystemRef = useValueRef(filesystem);
+  const oldFileSystemRef = useValueRef(oldFileSystem);
 
-export const writeFileAtom = atomFamily(
-  (path: string) => (get) => get(readFileAtom(path)),
-  (path: string) => async (get, set, contents: string) => {
-    await wait(2000);
-    fs.writeFileSync(path, contents);
-    set(readFileAtom(path), { contents: contents, status: "written" });
-  }
-);
-
-export const touchedFiles = {};
-
-function getPrevTouchedFiles() {
-  const envContents = fs.readFileSync("./.tavern").toString();
-  const env = envContents ? JSON.parse(envContents) : [];
-  return env;
-}
-
-function writeTouchedFilesState(files) {
-  fs.writeFileSync("./.tavern", JSON.stringify(files));
-}
-
-export function cleanup() {
-  const prevFiles = getPrevTouchedFiles();
-  const files = Object.keys(touchedFiles);
-  const filesToDelete = prevFiles.filter((e) => !files.find((v) => v === e));
-
-  filesToDelete.forEach((file) => {
-    if (fs.existsSync(file)) {
-      fs.unlinkSync(file);
+  useCleanup(() => {
+    for (var file of Object.keys(oldFileSystemRef.current ?? {})) {
+      if (!fileStystemRef.current[file]) {
+        try {
+          if (fs.existsSync(file)) {
+            fs.unlinkSync(file);
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      }
     }
   });
 
-  writeTouchedFilesState(Object.keys(touchedFiles));
+  return {
+    touchFile: (path, contents = null) =>
+      setFileSystem((state) => ({ ...state, [path]: contents })),
+  };
+});
+
+export const FileSystemProvider = FileSystemContext[0];
+export const useFileSystem = FileSystemContext[1];
+
+function throwStateError(state, action) {
+  throw new Error(
+    `Invalid action at state ${state.status}: ${JSON.stringify(action)}`
+  );
 }
 
-export const File = ({
-  path,
-  children,
-}: {
-  path: string;
-  children: string;
-}) => {
-  const [oldContents, setContents, status] = useFile(path);
+export const useFile = (
+  path: string,
+  {
+    transform,
+    defaultTransformedData,
+  }: {
+    transform?: (contents) => any;
+    defaultTransformedData?: any;
+  } = {}
+) => {
+  const [state, dispatch] = useReducerWithEffects(
+    (state, action, exec) => {
+      switch (state.status) {
+        case "idle": {
+          switch (action.type) {
+            case "READ_FILE": {
+              exec({ type: "readFile", path: action.path ?? path });
+              return {
+                ...state,
+                path: action.path ?? path,
+                status: "reading" as const,
+              };
+            }
+            case "WRITE_FILE": {
+              const contents = action.contents ?? state.contents;
+              exec({
+                type: "writeFile",
+                contents,
+                path: state.path,
+              });
+              return {
+                ...state,
+                contents,
+                transformed: transform ? transform(contents) : contents,
+                status: "writing" as const,
+              };
+            }
+            default:
+              throwStateError(state, action);
+          }
+        }
+        case "filled": {
+          switch (action.type) {
+            case "READ_FILE": {
+              exec({ type: "readFile", path: action.path ?? path });
+              return {
+                ...state,
+                path: action.path ?? path,
+                status: "reading" as const,
+              };
+            }
+            case "WRITE_FILE": {
+              const contents = action.contents ?? state.contents;
+              exec({
+                type: "writeFile",
+                contents,
+                path: state.path,
+              });
+              return {
+                ...state,
+                contents,
+                transformed: transform ? transform(contents) : contents,
+                status: "writing" as const,
+              };
+            }
+            case "SET_CONTENTS": {
+              return {
+                ...state,
+                contents: action.contents,
+                transformed: transform
+                  ? transform(action.contents)
+                  : action.contents,
+                status: "filled" as const,
+              };
+            }
+            default:
+              throwStateError(state, action);
+          }
+        }
+        case "reading": {
+          switch (action.type) {
+            case "READ_FILE": {
+              if (state.path !== action.path ?? path) {
+                exec({ type: "readFile", path: action.path ?? path });
+              }
+              return {
+                ...state,
+                path: action.path ?? path,
+                status: "reading" as const,
+              };
+            }
+            case "LOAD_CONTENTS": {
+              return {
+                ...state,
+                status: action.contents
+                  ? ("filled" as const)
+                  : ("empty" as const),
+                contents: action.contents,
+                transformed: transform
+                  ? transform(action.contents)
+                  : action.contents,
+              };
+            }
+
+            default:
+              throwStateError(state, action);
+          }
+        }
+        case "writing": {
+          switch (action.type) {
+            case "FILE_WRITTEN": {
+              return {
+                ...state,
+                status: "filled" as const,
+              };
+            }
+            default:
+              throwStateError(state, action);
+          }
+        }
+        case "empty": {
+          switch (action.type) {
+            case "READ_FILE": {
+              exec({ type: "readFile", path: action.path ?? path });
+              return {
+                ...state,
+                path: action.path ?? path,
+                status: "reading" as const,
+              };
+            }
+            case "SET_CONTENTS": {
+              return {
+                ...state,
+                contents: action.contents,
+                transformed: transform
+                  ? transform(action.contents)
+                  : action.contents,
+                status: "filled" as const,
+              };
+            }
+            case "WRITE_FILE": {
+              const contents = action.contents ?? state.contents;
+              exec({
+                type: "writeFile",
+                contents,
+                path: state.path,
+              });
+              return {
+                ...state,
+                contents,
+                transformed: transform ? transform(contents) : contents,
+                status: "writing" as const,
+              };
+            }
+            default:
+              throwStateError(state, action);
+          }
+        }
+        default:
+          throwStateError(state, action);
+      }
+    },
+    {
+      path,
+      status: "idle" as "reading" | "empty" | "filled" | "writing" | "idle",
+      contents: null as string | null,
+      transformed: (defaultTransformedData ?? null) as any | null,
+    },
+    {
+      readFile: async (_, effect, dispatch) => {
+        try {
+          const data = fs.readFileSync(effect.path).toString();
+          dispatch({
+            type: "LOAD_CONTENTS",
+            contents: data,
+          });
+        } catch (e) {
+          dispatch({
+            type: "LOAD_CONTENTS",
+            contents: null,
+          });
+        }
+      },
+      writeFile: async (_, effect, dispatch) => {
+        await wait(2000);
+        await mkdirp(pathUtils.dirname(path));
+        fs.writeFileSync(path, effect.contents);
+        dispatch({ type: "FILE_WRITTEN" });
+      },
+    }
+  );
 
   React.useEffect(() => {
-    setContents(children);
-  }, [children]);
+    dispatch({ type: "READ_FILE", path });
+  }, [dispatch, path]);
+
+  return {
+    ...state,
+    dispatch,
+  };
+};
+
+export function wait(time) {
+  return new Promise((res) =>
+    setTimeout(() => {
+      res();
+    }, time)
+  );
+}
+
+export const File = ({ path, contents }) => {
+  const { status, contents: fileContents, dispatch } = useFile(path);
+  const fileSystem = useFileSystem();
+
+  React.useEffect(() => {
+    fileSystem.touchFile(path, contents);
+  }, [path]);
+
+  React.useEffect(() => {
+    if (status === "empty") {
+      dispatch({ type: "WRITE_FILE", contents: contents });
+    } else if (status === "filled" && contents !== fileContents) {
+      dispatch({ type: "WRITE_FILE", contents: contents });
+    }
+  }, [contents, fileContents, status]);
 
   return <Text>{status}</Text>;
 };
-
-const touchFile = (path, contents?: any) => {
-  touchedFiles[path] = contents;
-};
-
-export function useFile(path: string) {
-  const setAtomValue = useUpdateAtom(fileAtom(path));
-  const [value, setContents] = useAtom(writeFileAtom(path));
-
-  return [
-    value.contents,
-    React.useCallback(
-      (contents?: string) => {
-        touchFile(path, contents);
-        if (contents !== value.contents && Boolean(contents)) {
-          setAtomValue({ status: "writing", contents: value.contents });
-          setContents(contents);
-        }
-      },
-      [setAtomValue, value.contents]
-    ),
-    value.status,
-  ] as [typeof value["contents"], typeof setContents, typeof value["status"]];
-}
