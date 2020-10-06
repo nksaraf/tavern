@@ -2,7 +2,8 @@
   "compilerOptions": {
     "moduleResolution": "node",
     "jsx": "react",
-    "target": "ESNext",
+    "module": "commonjs",
+    "target": "es2015",
     "allowSyntheticDefaultImports": true
   }
 }

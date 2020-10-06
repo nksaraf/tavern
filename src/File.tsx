@@ -272,5 +272,9 @@ export const File = ({ path, contents }) => {
     }
   }, [contents, fileContents, status]);
 
-  return <Text>{status}</Text>;
+  return (
+    <Text>
+      {path} {status}
+    </Text>
+  );
 };

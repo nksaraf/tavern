@@ -27,7 +27,7 @@
     "tavern": "dist/cli.js"
   },
   "scripts": {
-    "prepublishOnly": "rm -rf dist && yarn build",
+    "prepublishOnly": "rm -rf dist && yarn build && node scripts/index.js",
     "build": "yarn tsup src/cli.tsx src/index.tsx --format cjs,esm --dts --legacy-output"
   },
   "exports": {

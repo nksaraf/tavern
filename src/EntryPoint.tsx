@@ -13,7 +13,6 @@ export function addEntryPointToTsupScript(script: string, src: string) {
     );
     if (matched && matched.length === 4) {
       const included = matched[1].includes(src);
-      console.log(included, src);
 
       if (!included) {
         parseScripts = `yarn tsup ${matched[1]}${src} --${matched[3]}`;

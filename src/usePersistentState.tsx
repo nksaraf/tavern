@@ -15,7 +15,6 @@ export const PersistentStorageContext = createContext(({}: {}) => {
   ref.current = state;
 
   useCleanup(() => {
-    console.log(ref.current);
     fs.writeFileSync(".tavern", JSON.stringify(ref.current, null, 2));
   });
 
