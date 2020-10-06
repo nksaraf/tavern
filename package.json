@@ -1,6 +1,6 @@
 {
   "name": "tavern",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "module": "dist/esm/index.js",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,7 +27,7 @@
     "tavern": "dist/cli.js"
   },
   "scripts": {
-    "prepublishOnly": "yarn build",
+    "prepublishOnly": "rm -rf dist && yarn build",
     "build": "yarn tsup src/cli.tsx src/index.tsx --format cjs,esm --dts --legacy-output"
   },
   "exports": {
