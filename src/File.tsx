@@ -5,35 +5,24 @@ const mkdirp = require("mkdirp");
 import pathUtils from "path";
 import { createContext } from "create-hook-context";
 import { useReducerWithEffects } from "usables/useReducerWithEffects";
-import { usePersistentState } from "./usePersistentState";
-import { useCleanup } from "./PackageJson";
-import { useValueRef } from "usables/useValueRef";
+import { usePersistentStateWithCleanup } from "./persistence";
+import { useCleanup } from "./utils";
 
 export const FileSystemContext = createContext(({}: {}) => {
-  const [filesystem, setFileSystem, oldFileSystem] = usePersistentState(
+  const { touch, cleanup } = usePersistentStateWithCleanup(
     "filesystem",
+    (file) => {
+      if (fs.existsSync(file)) {
+        fs.unlinkSync(file);
+      }
+    },
     {}
   );
-  const fileStystemRef = useValueRef(filesystem);
-  const oldFileSystemRef = useValueRef(oldFileSystem);
 
-  useCleanup(() => {
-    for (var file of Object.keys(oldFileSystemRef.current ?? {})) {
-      if (!fileStystemRef.current[file]) {
-        try {
-          if (fs.existsSync(file)) {
-            fs.unlinkSync(file);
-          }
-        } catch (e) {
-          console.log(e);
-        }
-      }
-    }
-  });
+  useCleanup(cleanup);
 
   return {
-    touchFile: (path, contents = null) =>
-      setFileSystem((state) => ({ ...state, [path]: contents })),
+    touchFile: touch,
   };
 });
 
@@ -230,7 +219,6 @@ export const useFile = (
         }
       },
       writeFile: async (_, effect, dispatch) => {
-        await wait(2000);
         await mkdirp(pathUtils.dirname(path));
         fs.writeFileSync(path, effect.contents);
         dispatch({ type: "FILE_WRITTEN" });

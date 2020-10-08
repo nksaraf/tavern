@@ -1,7 +1,9 @@
 import React from "react";
 import * as fs from "fs";
 import { createContext } from "create-hook-context";
-import { useCleanup } from "./PackageJson";
+import { useValueRef } from "usables/useValueRef";
+import { useCleanup } from "./utils";
+
 export const PersistentStorageContext = createContext(({}: {}) => {
   const oldState = React.useMemo(() => {
     try {
@@ -27,6 +29,7 @@ export const PersistentStorageContext = createContext(({}: {}) => {
 
 export const PersistentStorageProvider = PersistentStorageContext[0];
 export const usePersistentStorage = PersistentStorageContext[1];
+
 export function usePersistentState<V>(
   key: string,
   defaultValue: V | undefined
@@ -51,3 +54,44 @@ export function usePersistentState<V>(
     typeof oldLocalState
   ];
 }
+
+export const usePersistentStateWithCleanup = (
+  key: string,
+  cleanup = (key, val) => {},
+  defaultValue = {}
+) => {
+  const [
+    persistentState,
+    setPersistentState,
+    oldPersistenteState,
+  ] = usePersistentState(key, defaultValue);
+  const peristentStateRef = useValueRef(persistentState);
+  const oldPersistentStateRef = useValueRef(oldPersistenteState);
+  const cleanupRef = useValueRef(cleanup);
+  const cleanedRef = React.useRef(false);
+
+  const cleanupFunc = React.useCallback(() => {
+    if (cleanedRef.current) {
+      return;
+    }
+    cleanedRef.current = true;
+    for (var key of Object.keys(oldPersistentStateRef.current ?? {})) {
+      if (!peristentStateRef.current[key]) {
+        try {
+          cleanupRef.current(key, oldPersistentStateRef.current[key]);
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    }
+  }, [key]);
+
+  return {
+    cleanup: cleanupFunc,
+    touch: React.useCallback(
+      (key, value = null) =>
+        setPersistentState((state) => ({ ...state, [key]: value })),
+      [setPersistentState]
+    ),
+  };
+};
