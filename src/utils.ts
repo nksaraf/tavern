@@ -99,3 +99,18 @@ export function resolveEntry(name, root = "src") {
     pathUtils.join(root, `${name}.tsx`),
   ].find((path) => fs.existsSync(path));
 }
+
+export async function wait(time: number) {
+  return new Promise((res, rej) => {
+    setTimeout(() => {
+      return res();
+    }, time);
+  });
+}
+export async function waitRandomly() {
+  const time = Math.random() * 2000 + 1000;
+  await wait(time);
+  if (Math.random() > 1.9) {
+    throw new Error("something wrong");
+  }
+}

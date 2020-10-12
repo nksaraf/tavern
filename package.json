@@ -2,6 +2,8 @@
   "name": "tavern",
   "version": "0.3.6",
   "dependencies": {
+    "@state-designer/react": "^1.2.26",
+    "@types/memorystream": "^0.3.0",
     "@types/node": "^14.11.2",
     "@types/react": "^16.9.49",
     "create-hook-context": "^1.0.0",
@@ -13,10 +15,12 @@
     "ink-spinner": "^4.0.1",
     "jotai": "^0.7.3",
     "magiql": "^0.0.9",
+    "memorystream": "^0.3.1",
     "mkdirp": "^1.0.4",
     "parse-git-config": "^3.0.0",
     "prettier": "^2.1.2",
     "react-error-boundary": "^3.0.2",
+    "state-designer": "^1.2.26",
     "sucrase": "^3.15.0",
     "usables": "^0.0.7",
     "use-asset": "^0.1.1",
@@ -58,7 +62,11 @@
       "default": "./dist/esm/cli.js"
     }
   },
-  "files": ["README.md", "dist", "cli"],
+  "files": [
+    "README.md",
+    "dist",
+    "cli"
+  ],
   "module": "dist/esm/index.js",
   "main": "dist/index.js",
   "types": "dist/index.d.ts"
