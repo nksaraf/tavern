@@ -64,6 +64,7 @@ export const executorDesign = createDesign({
 export type Executor = S.StateWithDesign<typeof executorDesign> & {
   parent?: S.StateWithDesign<typeof executorDesign> | null;
   execute?: TaskFn | null;
+  silent?: boolean;
 };
 
 export const ExecutorContext = React.createContext<Executor | null>(null);
@@ -97,10 +98,22 @@ export function useExecutor() {
   return executor;
 }
 
-export function Executor({ children, parallel = false }) {
+export function Executor({
+  children,
+  parallel = false,
+  silent = false,
+  verbose = false,
+}) {
   const parentExecutor = useExecutor();
   const executor = useStateDesigner(executorDesign) as Executor;
   executor.parent = parentExecutor;
+  executor.silent = silent
+    ? true
+    : parentExecutor?.silent
+    ? verbose
+      ? false
+      : true
+    : false;
 
   return (
     <ExecutorContext.Provider value={executor as Executor}>
@@ -115,14 +128,16 @@ export function Executor({ children, parallel = false }) {
 export function Execution() {
   const executor = useExecutor();
   return (
-    <IndentedText>
-      {executor.whenIn({
-        executing: "running",
-        success: "success",
-        error: "error",
-        idle: "idle",
-      })}
-    </IndentedText>
+    !executor.silent && (
+      <IndentedText>
+        {executor.whenIn({
+          executing: "running",
+          success: "success",
+          error: "error",
+          idle: "idle",
+        })}
+      </IndentedText>
+    )
   );
 }
 
@@ -214,7 +229,7 @@ export function useTask(taskFn: TaskFn) {
   return task as Task;
 }
 
-export function Task({ name, onRun }) {
+export function Task({ name, onRun, ...props }) {
   const task = useTask(onRun);
   const executor = useExecutor();
   const taskFnRef = useValueRef(task.execute);
@@ -226,14 +241,17 @@ export function Task({ name, onRun }) {
   }, [executor.send]);
 
   return (
-    <IndentedText>
-      {name}{" "}
-      {task.whenIn({
-        running: "running",
-        success: "success",
-        error: "error",
-        idle: "idle",
-      })}
-    </IndentedText>
+    !executor.silent && (
+      <IndentedText {...props}>
+        {name}{" "}
+        {task.whenIn({
+          running: "running",
+          success: "success",
+          error: "error",
+          idle: "idle",
+        })}{" "}
+        {task.isIn("error") && task.data.error.message.split("\n")[0]}
+      </IndentedText>
+    )
   );
 }

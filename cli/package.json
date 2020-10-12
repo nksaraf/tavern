@@ -1,7 +1,0 @@
-{
-  "name": "tavern/cli",
-  "private": true,
-  "main": "../dist/cli.js",
-  "module": "../dist/esm/cli.js",
-  "types": "../dist/cli.d.ts"
-}
