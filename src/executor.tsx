@@ -3,6 +3,7 @@ import { createDesign, useStateDesigner, S } from "state-designer";
 import { runTasks, TaskFn } from "./task";
 import { useValueRef } from "usables/useValueRef";
 import { IndentedText, IndentProvider } from "./indent";
+import Spinner from "ink-spinner";
 
 export const executorDesign = createDesign({
   initial: "idle",
@@ -98,12 +99,27 @@ export function useExecutor() {
   return executor;
 }
 
-export function Executor({
-  children,
-  parallel = false,
-  silent = false,
-  verbose = false,
-}) {
+export const Executor = React.forwardRef<
+  Executor,
+  {
+    children: React.ReactNode;
+    parallel?: boolean;
+    silent?: boolean;
+    verbose?: boolean;
+    label?: string;
+    indented?: boolean;
+  }
+>(function Executor(
+  {
+    children,
+    parallel = false,
+    silent = false,
+    verbose = false,
+    label = undefined,
+    indented = true,
+  },
+  ref
+) {
   const parentExecutor = useExecutor();
   const executor = useStateDesigner(executorDesign) as Executor;
   executor.parent = parentExecutor;
@@ -115,27 +131,45 @@ export function Executor({
       : true
     : false;
 
+  if (ref) {
+    if (typeof ref === "function") {
+      ref(executor);
+    } else {
+      ref.current = executor;
+    }
+  }
+
   return (
     <ExecutorContext.Provider value={executor as Executor}>
-      <Execution />
-      <IndentProvider>{children}</IndentProvider>
+      {label && <Execution label={label} />}
+      <IndentProvider indented={indented}>{children}</IndentProvider>
       {!parentExecutor && <Execute parallel={parallel} />}
       {parentExecutor && <ExecutionTask parallel={parallel} />}
     </ExecutorContext.Provider>
   );
-}
+});
 
-export function Execution() {
+export function Execution({ label = "tasks" }) {
   const executor = useExecutor();
   return (
     !executor.silent && (
-      <IndentedText>
-        {executor.whenIn({
-          executing: "running",
-          success: "success",
-          error: "error",
-          idle: "idle",
+      <IndentedText
+        dimColor={executor.isIn("idle")}
+        bold
+        color={executor.whenIn({
+          executing: "blue",
+          success: "green",
+          error: "red",
+          idle: "white",
         })}
+      >
+        {executor.whenIn({
+          executing: <Spinner />,
+          success: "✔",
+          error: "✖",
+          idle: "o",
+        })}{" "}
+        {label}
       </IndentedText>
     )
   );
@@ -242,15 +276,23 @@ export function Task({ name, onRun, ...props }) {
 
   return (
     !executor.silent && (
-      <IndentedText {...props}>
-        {name}{" "}
+      <IndentedText
+        dimColor={task.isIn("idle")}
+        color={task.whenIn({
+          running: "blue",
+          success: "green",
+          error: "red",
+          idle: "grey",
+        })}
+        {...props}
+      >
         {task.whenIn({
-          running: "running",
-          success: "success",
-          error: "error",
-          idle: "idle",
+          running: <Spinner />,
+          success: "✔",
+          error: "✖",
+          idle: "o",
         })}{" "}
-        {task.isIn("error") && task.data.error.message.split("\n")[0]}
+        {name} {task.isIn("error") && task.data.error.message.split("\n")[0]}
       </IndentedText>
     )
   );

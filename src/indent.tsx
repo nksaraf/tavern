@@ -15,10 +15,13 @@ export function IndentedText({ children, ...props }) {
   );
 }
 
-export const IndentContext = createContext(({}: {}) => {
-  const indent: number = useIndent() ?? 0;
-  return indent + 1;
-}, 0);
+export const IndentContext = createContext(
+  ({ indented = true }: { indented?: boolean }) => {
+    const indent: number = useIndent() ?? 0;
+    return indented ? indent + 1 : indent;
+  },
+  0
+);
 
 export const IndentProvider = IndentContext[0];
 export const useIndent = IndentContext[1];

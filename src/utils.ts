@@ -42,31 +42,30 @@ export function useJsonFile(path: string) {
     defaultTransformedData: {},
   });
 
-  const contentsRef = useValueRef(file.transformed);
+  const contentsRef = useValueRef(file.values.transformed);
 
   const update = React.useCallback(
     (data) => {
-      if (stringify(data) !== stringify(file.transformed)) {
-        file.dispatch({
-          type: "SET_CONTENTS",
+      if (stringify(data) !== stringify(file.values.transformed)) {
+        file.send("SET_CONTENTS", {
           contents: JSON.stringify(data, null, 2),
         });
       }
     },
-    [file.dispatch, file.transformed]
+    [file.send, file.values.transformed]
   );
 
-  const write = React.useCallback(
-    (data) => {
-      if (stringify(data) !== stringify(file.transformed)) {
-        file.dispatch({
-          type: "WRITE_FILE",
-          contents: JSON.stringify(data, null, 2),
-        });
-      }
-    },
-    [file.dispatch, file.transformed]
-  );
+  // const write = React.useCallback(
+  //   (data) => {
+  //     if (stringify(data) !== stringify(file.transformed)) {
+  //       file.send({
+  //         type: "WRITE_FILE",
+  //         contents: JSON.stringify(data, null, 2),
+  //       });
+  //     }
+  //   },
+  //   [file.dispatch, file.transformed]
+  // );
 
   const cleanup = React.useCallback(
     () =>
@@ -80,18 +79,14 @@ export function useJsonFile(path: string) {
     [path]
   );
 
-  return { ...file, update, write, cleanup, path, json: file.transformed };
-}
-
-const path = require("path");
-
-export function requireWithSucrase(filePath) {
-  return eval("require")(
-    path.join(process.cwd(), filePath.substr(0, filePath.lastIndexOf(".")))
-  );
+  return { ...file, update, cleanup, path, json: file.transformed };
 }
 
 import pathUtils from "path";
+
+export function requireWithSucrase(filePath) {
+  return eval("require")(pathUtils.join(process.cwd(), filePath));
+}
 
 export function resolveEntry(name, root = "src") {
   return [
