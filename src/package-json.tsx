@@ -4,10 +4,10 @@ import { useValueRef } from "usables/useValueRef";
 import { ensureExists, useJsonFile, useCleanup } from "./utils";
 import produce from "immer";
 
-export function usePackageInfo({ status, update, json }) {
+export function usePackageInfo(file) {
   const pkg = usePackage();
   React.useEffect(() => {
-    if (status === "filled") {
+    if (file.isIn("filled")) {
       const packageJson = json;
       update(
         produce(packageJson, (draft) => {

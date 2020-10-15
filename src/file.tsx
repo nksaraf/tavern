@@ -7,7 +7,7 @@ import { createContext } from "create-hook-context";
 import { useReducerWithEffects } from "usables/useReducerWithEffects";
 import { usePersistentStateWithCleanup } from "./persistence";
 import { useCleanup } from "./utils";
-import { createDesign, useStateDesigner } from "state-designer";
+import { createDesign, S, useStateDesigner } from "state-designer";
 import { Task, useTask } from "./executor";
 
 export const FileSystemContext = createContext(({}: {}) => {
@@ -155,6 +155,18 @@ const resourceDesign = createDesign({
   values: {},
 });
 
+export type FileState = S.DesignedState<
+  {
+    path: any;
+    contents: any;
+    error: any;
+    dirty: boolean;
+  },
+  {
+    transformed: any;
+  }
+>;
+
 export const useFile = (
   path: string,
   {
@@ -165,7 +177,7 @@ export const useFile = (
     defaultTransformedData?: any;
   } = {}
 ) => {
-  const resource = useStateDesigner(
+  const resource: FileState = useStateDesigner(
     {
       ...resourceDesign,
       data: { ...resourceDesign.data, path },

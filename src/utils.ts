@@ -79,7 +79,7 @@ export function useJsonFile(path: string) {
     [path]
   );
 
-  return { ...file, update, cleanup, path, json: file.transformed };
+  return { ...file, update, cleanup, path, json: file.values.transformed };
 }
 
 import pathUtils from "path";
