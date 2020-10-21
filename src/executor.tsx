@@ -51,7 +51,12 @@ export const executorDesign = createDesign({
         : 1;
       return await runTasks(data.tasks, {
         maxParallel,
-        continueOnError: payload.parallel ? true : false,
+        continueOnError:
+          typeof payload.continueOnError === "boolean"
+            ? payload.continueOnError
+            : payload.parallel
+            ? true
+            : false,
       });
     },
   },
@@ -66,16 +71,57 @@ export type Executor = S.StateWithDesign<typeof executorDesign> & {
   parent?: S.StateWithDesign<typeof executorDesign> | null;
   execute?: TaskFn | null;
   silent?: boolean;
+  addTask?: (task: TaskFn) => void;
 };
 
 export const ExecutorContext = React.createContext<Executor | null>(null);
 
 export function useExecutor() {
   const executor = React.useContext(ExecutorContext);
+  if (!executor) {
+    return null;
+  }
+
+  const state = useStateDesigner(executor) as Executor;
+  return state;
+}
+
+type ExecutionOptions = {
+  parallel?: boolean;
+  continueOnError?: boolean;
+  maxParallel?: number;
+};
+
+export const Executor = React.forwardRef<
+  Executor,
+  {
+    children: React.ReactNode;
+    silent?: boolean;
+    verbose?: boolean;
+    executeOnRender?: boolean;
+    label?: string;
+    indented?: boolean;
+    joinParent?: boolean;
+  } & ExecutionOptions
+>(function Executor(
+  {
+    children,
+    silent = false,
+    verbose = false,
+    label = undefined,
+    indented = true,
+    joinParent = true,
+    executeOnRender = true,
+    ...options
+  },
+  ref
+) {
+  const parentExecutor = useExecutor();
+  const executor = useStateDesigner(executorDesign) as Executor;
+
   const execute = React.useCallback(
-    async (options) => {
+    async (options = {}) => {
       return new Promise((resolve, reject) => {
-        executor.send("EXECUTE", options);
         const cancel = executor.onUpdate((state) => {
           if (state.isIn("success")) {
             cancel();
@@ -85,45 +131,22 @@ export function useExecutor() {
             reject(state.data.error);
           }
         });
+        executor.can("EXECUTE") && executor.send("EXECUTE", options);
       });
     },
-    [executor]
+    [executor?.send]
   );
 
-  if (!executor) {
-    return null;
-  }
+  const addTask = React.useCallback(
+    (task) => {
+      executor?.send("ADD_TASK", {
+        task,
+      });
+    },
+    [executor?.send]
+  );
 
-  const state = useStateDesigner(executor) as Executor;
-  state.execute = execute;
-  return executor;
-}
-
-export const Executor = React.forwardRef<
-  Executor,
-  {
-    children: React.ReactNode;
-    parallel?: boolean;
-    silent?: boolean;
-    verbose?: boolean;
-    label?: string;
-    indented?: boolean;
-  }
->(function Executor(
-  {
-    children,
-    parallel = false,
-    silent = false,
-    verbose = false,
-    label = undefined,
-    indented = true,
-  },
-  ref
-) {
-  const parentExecutor = useExecutor();
-  const executor = useStateDesigner(executorDesign) as Executor;
-  executor.parent = parentExecutor;
-  executor.silent = silent
+  silent = silent
     ? true
     : parentExecutor?.silent
     ? verbose
@@ -131,64 +154,71 @@ export const Executor = React.forwardRef<
       : true
     : false;
 
+  const finalExecutor = {
+    ...executor,
+    execute,
+    addTask,
+    parent: parentExecutor,
+    silent,
+  };
+
   if (ref) {
     if (typeof ref === "function") {
-      ref(executor);
+      ref(finalExecutor);
     } else {
-      ref.current = executor;
+      ref.current = finalExecutor;
     }
   }
 
   return (
-    <ExecutorContext.Provider value={executor as Executor}>
-      {label && <Execution label={label} />}
+    <ExecutorContext.Provider value={finalExecutor as Executor}>
+      {label && !executor.silent && <Execution label={label} />}
       <IndentProvider indented={indented}>{children}</IndentProvider>
-      {!parentExecutor && <Execute parallel={parallel} />}
-      {parentExecutor && <ExecutionTask parallel={parallel} />}
+      {!parentExecutor && executeOnRender && <Execute {...options} />}
+      {parentExecutor && joinParent && <ExecutionTask {...options} />}
     </ExecutorContext.Provider>
   );
 });
 
 export function Execution({ label = "tasks" }) {
   const executor = useExecutor();
+
   return (
-    !executor.silent && (
-      <IndentedText
-        dimColor={executor.isIn("idle")}
-        bold
-        color={executor.whenIn({
-          executing: "blue",
-          success: "green",
-          error: "red",
-          idle: "white",
-        })}
-      >
-        {executor.whenIn({
-          executing: <Spinner />,
-          success: "✔",
-          error: "✖",
-          idle: "o",
-        })}{" "}
-        {label}
-      </IndentedText>
-    )
+    <IndentedText
+      dimColor={executor.isIn("idle")}
+      bold
+      color={executor.whenIn({
+        executing: "blue",
+        success: "green",
+        error: "red",
+        idle: "white",
+      })}
+    >
+      {executor.whenIn({
+        executing: <Spinner />,
+        success: "✔",
+        error: "✖",
+        idle: "o",
+      })}{" "}
+      {label}
+    </IndentedText>
   );
 }
 
-export function Execute({ parallel = false }) {
+export function Execute({ ...options }: ExecutionOptions) {
   const executor = useExecutor();
   const executorRef = useValueRef(executor.execute);
 
   React.useEffect(() => {
-    executorRef.current({ parallel });
+    executorRef.current(options);
   }, []);
 
   return null;
 }
 
-export function ExecutionTask({ parallel = false }) {
+export function ExecutionTask({ ...options }: ExecutionOptions) {
   const executor = useExecutor();
-  const task = useTask(() => executor.execute({ parallel }));
+  const task = useTask(() => executor.execute(options));
   const executeFnRef = useValueRef(task.execute);
 
   React.useEffect(() => {

@@ -1,15 +1,13 @@
 #!/usr/bin/env node
-import { render, Box, Text } from "ink";
+require("dotenv").config();
 
+import { render, Box, Text, useInput } from "ink";
 import { IndentedText } from "./indent";
 import React from "react";
 import { FileSystemProvider, WriteFileTask, File } from "./file";
 import { PersistentStorageProvider } from "./persistence";
 import mdx from "@mdx-js/mdx";
 import { MDXProvider } from "@mdx-js/react";
-
-require("dotenv").config();
-
 import { requireWithSucrase } from "./utils";
 import * as pirates from "pirates";
 import { Options, transform } from "sucrase";
@@ -25,7 +23,6 @@ export function addHook(
         isMdx
           ? `const {mdx} = require("@mdx-js/react");
           const path = require('path');
-          console.log('Loading Tavern config from', path.basename(__filename));
         ${mdx.sync(`${code}`)}`
           : code,
         {
@@ -90,21 +87,30 @@ try {
           File,
         }}
       >
-        <PersistentStorageProvider>
-          <FileSystemProvider>
-            <Executor indented={false}>{children}</Executor>
-          </FileSystemProvider>
-        </PersistentStorageProvider>
+        <Tavern>{children}</Tavern>
       </MDXProvider>
     );
   };
+
   const Tavern = ({ children }) => {
+    const ref = React.useRef<Executor>();
+
+    useInput((a, e) => {
+      if (e.return) {
+        ref.current?.execute();
+      }
+    });
+
     return (
-      <PersistentStorageProvider>
-        <FileSystemProvider>
-          <Executor indented={false}>{children}</Executor>
-        </FileSystemProvider>
-      </PersistentStorageProvider>
+      <>
+        <PersistentStorageProvider>
+          <FileSystemProvider>
+            <Executor indented={false} executeOnRender={false} ref={ref}>
+              {children}
+            </Executor>
+          </FileSystemProvider>
+        </PersistentStorageProvider>
+      </>
     );
   };
 
