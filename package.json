@@ -35,7 +35,7 @@
   },
   "scripts": {
     "prepublishOnly": "rm -rf dist && yarn build && node scripts/index.js",
-    "build": "yarn tsup src/index.tsx src/cli.tsx --format cjs,esm --dts --legacy-output"
+    "build": "yarn tsup src/index.tsx --format cjs,esm --dts --legacy-output"
   },
   "devDependencies": {
     "react": "^16.13.1",
