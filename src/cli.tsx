@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { render, Box, Text } from "ink";
+
 import { IndentedText } from "./indent";
 import React from "react";
 import { FileSystemProvider, WriteFileTask, File } from "./file";

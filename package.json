@@ -1,6 +1,6 @@
 {
   "name": "tavern",
-  "version": "0.3.6",
+  "version": "0.0.1",
   "dependencies": {
     "@mdx-js/mdx": "^1.6.18",
     "@mdx-js/react": "^1.6.18",
@@ -45,7 +45,6 @@
   "peerDependencies": {
     "react": "^16.13.1"
   },
-  "repository": "https://github.com/nksaraf/tavern.git",
   "author": "Nikhil Saraf <nsaraf98@gmail.com>",
   "license": "MIT",
   "exports": {
@@ -66,12 +65,9 @@
       "default": "./dist/esm/cli.js"
     }
   },
-  "files": [
-    "README.md",
-    "dist",
-    "cli"
-  ],
+  "files": ["README.md", "dist", "cli"],
   "module": "dist/esm/index.js",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts"
+  "types": "dist/index.d.ts",
+  "repository": "https://github.com/nksaraf/tavern.git"
 }

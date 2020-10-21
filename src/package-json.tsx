@@ -2,14 +2,17 @@ import React from "react";
 import { createContext } from "create-hook-context";
 import { useValueRef } from "usables/useValueRef";
 import { ensureExists, useJsonFile, useCleanup } from "./utils";
+// import {}
 import produce from "immer";
+import { FileState } from "./file";
 
-export function usePackageInfo(file) {
+export function usePackageInfo(file: ReturnType<typeof useJsonFile>) {
   const pkg = usePackage();
   React.useEffect(() => {
     if (file.isIn("filled")) {
-      const packageJson = json;
-      update(
+      const packageJson = file.json;
+      console.log(packageJson);
+      file.update(
         produce(packageJson, (draft) => {
           if (pkg.name) draft.name = pkg.name;
           if (pkg.version) draft.version = pkg.version;
@@ -23,7 +26,7 @@ export function usePackageInfo(file) {
         })
       );
     }
-  }, [status, update, json]);
+  }, [file.isIn, file.update, file.json]);
 
   return () => {};
 }
@@ -70,7 +73,9 @@ export const usePackage = PackageContext[1];
 export function Package({ name, version, children }) {
   return (
     <PackageProvider name={name} version={version}>
-      <PackageJSONProvider>{children}</PackageJSONProvider>
+      <PackageJSONProvider>
+        <Excecutor>{children}</Excecutor>
+      </PackageJSONProvider>
     </PackageProvider>
   );
 }
