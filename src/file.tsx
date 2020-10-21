@@ -6,7 +6,7 @@ import pathUtils from "path";
 import { createContext } from "create-hook-context";
 import { useReducerWithEffects } from "usables/useReducerWithEffects";
 import { usePersistentStateWithCleanup } from "./persistence";
-import { useCleanup } from "./utils";
+// import { useCleanup } from "./utils";
 import { createDesign, S, useStateDesigner } from "state-designer";
 import { Task, useTask } from "./executor";
 
@@ -21,7 +21,7 @@ export const FileSystemContext = createContext(({}: {}) => {
     {}
   );
 
-  useCleanup(cleanup);
+  // useCleanup(cleanup);
 
   return {
     touchFile: touch,

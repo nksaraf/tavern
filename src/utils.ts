@@ -23,18 +23,18 @@ export function ensureExists(data: string[], ...args: string[]) {
 
 export { stringify };
 
-export function useCleanup(cb: () => void) {
-  const cbRef = useValueRef(cb);
-  React.useEffect(() => {
-    return () => {
-      try {
-        cbRef.current();
-      } catch (err) {
-        console.log(err);
-      }
-    };
-  }, []);
-}
+// export function useCleanup(cb: () => void) {
+//   const cbRef = useValueRef(cb);
+//   React.useEffect(() => {
+//     return () => {
+//       try {
+//         cbRef.current();
+//       } catch (err) {
+//         console.log(err);
+//       }
+//     };
+//   }, []);
+// }
 
 export function useJsonFile(path: string) {
   const file = useFile(path, {

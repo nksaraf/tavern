@@ -41,12 +41,12 @@ export function useMainEntryPoint({ status, update, json }) {
   return () => {};
 }
 
-export const MainEntryPoint = () => {
-  const packageJson = usePackageJSON();
-  useMainEntryPoint(packageJson);
+// export const MainEntryPoint = () => {
+//   const packageJson = usePackageJSON();
+//   // useMainEntryPoint(packageJson);
 
-  return <Text>index</Text>;
-};
+//   return <Text>index</Text>;
+// };
 
 export function addEntryPointToTsupScript(script: string, src: string) {
   if (script) {
@@ -96,9 +96,9 @@ export const TSUPContext = createContext(({}: {}) => {
     }
   );
 
-  React.useEffect(() => {
-    packageJson.registerCleanup(cleanup);
-  }, [cleanup, packageJson.registerCleanup]);
+  // React.useEffect(() => {
+  //   packageJson.registerCleanup(cleanup);
+  // }, [cleanup, packageJson.registerCleanup]);
 
   return {
     touchEntryPoint: React.useCallback((key: string) => touch(key, true), [
@@ -160,52 +160,52 @@ const transform = () => ({
   }),
 });
 
-export const EntryPoint = ({ name, source = resolveEntry(name) }) => {
-  const { status, packageJson, update } = usePackageJSON();
-  const { status: srcStatus, dispatch: srcDispatch } = useFile(source);
-  const { touchEntryPoint } = useTsup();
+// export const EntryPoint = ({ name, source = resolveEntry(name) }) => {
+// const packageJson = usePackageJSON();
+// const { status: srcStatus, dispatch: srcDispatch } = useFile(source);
+// const { touchEntryPoint } = useTsup();
 
-  React.useEffect(() => {
-    if (status === "filled") {
-      update({
-        ...packageJson,
-        exports: {
-          ...(packageJson.exports ?? {}),
-          [`./${name}`]: {
-            import: `./dist/esm/${name}.js`,
-            browser: `./dist/esm/${name}.js`,
-            require: `./dist/${name}.js`,
-            node: `./dist/${name}.js`,
-            default: `./dist/esm/${name}.js`,
-          },
-        },
-        scripts: {
-          ...(packageJson.scripts ?? {}),
-          build: addEntryPointToTsupScript(
-            packageJson.scripts?.["build"],
-            source
-          ),
-        },
-        files: ensureExists(packageJson.files ?? [], name),
-      });
-    }
-  }, [status, update, packageJson, source, name]);
+// React.useEffect(() => {
+//   if (status === "filled") {
+//     update({
+//       ...packageJson,
+//       exports: {
+//         ...(packageJson.exports ?? {}),
+//         [`./${name}`]: {
+//           import: `./dist/esm/${name}.js`,
+//           browser: `./dist/esm/${name}.js`,
+//           require: `./dist/${name}.js`,
+//           node: `./dist/${name}.js`,
+//           default: `./dist/esm/${name}.js`,
+//         },
+//       },
+//       scripts: {
+//         ...(packageJson.scripts ?? {}),
+//         build: addEntryPointToTsupScript(
+//           packageJson.scripts?.["build"],
+//           source
+//         ),
+//       },
+//       files: ensureExists(packageJson.files ?? [], name),
+//     });
+//   }
+// }, [status, update, packageJson, source, name]);
 
-  React.useEffect(() => {
-    touchEntryPoint(name);
-  }, [touchEntryPoint, name]);
+// React.useEffect(() => {
+//   touchEntryPoint(name);
+// }, [touchEntryPoint, name]);
 
-  React.useEffect(() => {
-    if (srcStatus === "empty") {
-      srcDispatch({ type: "WRITE_FILE", contents: "" });
-    }
-  }, [srcStatus]);
+// React.useEffect(() => {
+//   if (srcStatus === "empty") {
+//     srcDispatch({ type: "WRITE_FILE", contents: "" });
+//   }
+// }, [srcStatus]);
 
-  return (
-    <>
-      {status === "filled" ? (
-        <EntryPointPackageJson name={name} rootName={packageJson.name} />
-      ) : null}
-    </>
-  );
-};
+// return (
+//   <>
+//     {status === "filled" ? (
+//       <EntryPointPackageJson name={name} rootName={packageJson.name} />
+//     ) : null}
+//   </>
+// );
+// };

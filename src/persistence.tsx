@@ -2,7 +2,7 @@ import React from "react";
 import * as fs from "fs";
 import { createContext } from "create-hook-context";
 import { useValueRef } from "usables/useValueRef";
-import { useCleanup } from "./utils";
+// import { useCleanup } from "./utils";
 
 export const PersistentStorageContext = createContext(({}: {}) => {
   const oldState = React.useMemo(() => {
@@ -16,9 +16,9 @@ export const PersistentStorageContext = createContext(({}: {}) => {
   const ref = React.useRef(state);
   ref.current = state;
 
-  useCleanup(() => {
-    fs.writeFileSync(".tavern", JSON.stringify(ref.current, null, 2));
-  });
+  // useCleanup(() => {
+  //   fs.writeFileSync(".tavern", JSON.stringify(ref.current, null, 2));
+  // });
 
   return [state, setState, oldState] as [
     typeof state,
